@@ -14,7 +14,7 @@ import requests
 import shutil
 
 # URL do modelo hospedado no GitHub (substitua pelo seu URL raw)
-MODELO_URL = "https://raw.githubusercontent.com/seuusuario/gerador-relatorio-alta/main/Modelo_RESUMO_ALTA.pdf"
+MODELO_URL = "https://raw.githubusercontent.com/lucasbritocFis/gerador-relatorio-alta/main/Modelo_RESUMO_ALTA.pdf"
 
 # Função para baixar o modelo do GitHub com verificação
 def get_modelo_pdf():
