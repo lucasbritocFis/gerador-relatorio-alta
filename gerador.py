@@ -320,32 +320,27 @@ import streamlit as st
 from streamlit.components.v1 import html
 import time
 
-# --- CONFIGURAÇÃO ---
-st.set_page_config(page_title="Upload Invisível", layout="centered")
+# --- Configuração da Página ---
+st.set_page_config(page_title="Upload Totalmente Custom", layout="centered")
 
-# --- CSS NUCLEAR (esconde TUDO do uploader padrão) ---
+# --- CSS Nuclear (Oculta o uploader mas mantém funcionalidade) ---
 st.markdown("""
 <style>
-    /* Esconde o container inteiro do file_uploader */
+    /* Container principal - mantém funcional mas invisível */
     div[data-testid="stFileUploader"] {
-        visibility: hidden;
-        height: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
     }
     
-    /* Esconde o texto "Drag and drop files here" */
-    div[data-testid="stFileUploader"] > div > small {
-        display: none !important;
-    }
-    
-    /* Esconde o botão "Browse files" */
-    div[data-testid="stFileUploader"] > div > button {
-        display: none !important;
-    }
-    
-    /* Nossa UI customizada */
-    .fake-uploader {
+    /* Nossa UI customizada visível */
+    .custom-upload-area {
         border: 3px dashed #4e8cff;
         border-radius: 20px;
         padding: 50px;
@@ -355,45 +350,64 @@ st.markdown("""
         transition: all 0.3s;
         margin: 20px 0;
     }
-    .fake-uploader:hover {
+    .custom-upload-area:hover {
         background: #e6f0ff;
         transform: scale(1.01);
     }
     .upload-icon {
         font-size: 60px;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- TÍTULO ---
-st.title("📤 Upload Super Custom")
+# --- Título ---
+st.title("📤 Upload Personalizado")
 
-# --- UPLOADER FALSO (que ativa o real) ---
+# --- Área Customizada que Ativa o Upload Real ---
 html("""
-<div class="fake-uploader" onclick="document.getElementById('real-uploader').click()">
+<div class="custom-upload-area" onclick="document.getElementById('file-uploader').click()">
     <div class="upload-icon">📤</div>
-    <h3>Arraste seus PDFs aqui</h3>
+    <h3>Solte seus arquivos aqui</h3>
     <p>Ou clique para selecionar</p>
-    <p style="font-size: 0.8em; color: #6c757d;">Limite: 200MB por arquivo • PDF</p>
+    <p style="font-size: 0.8em; color: #6c757d;">Formatos aceitos: PDF • Máx. 200MB</p>
 </div>
 """)
 
-# --- UPLOADER REAL (totalmente invisível) ---
+# --- Uploader Real (invisível mas funcional) ---
 uploaded_files = st.file_uploader(
-    "Upload secreto",
+    "Selecione arquivos",
     type="pdf",
     accept_multiple_files=True,
     label_visibility="collapsed",
-    key="hidden_uploader"  # Chave única para evitar conflitos
+    key="file-uploader"  # IMPORTANTE: mesmo ID usado no JavaScript
 )
 
-# --- FEEDBACK ---
+# --- Feedback Visual ---
 if uploaded_files:
     st.success(f"✅ {len(uploaded_files)} arquivo(s) carregado(s)!")
-    for file in uploaded_files:
-        st.code(f"📄 {file.name} ({len(file.getvalue()) / 1024:.2f} KB)")
+    with st.expander("📁 Ver arquivos", expanded=True):
+        cols = st.columns(2)
+        for idx, file in enumerate(uploaded_files):
+            with cols[idx % 2]:
+                st.info(f"""
+                **{file.name}**  
+                Tamanho: {len(file.getvalue()) / 1024:.2f} KB
+                """)
 
-# --- RODAPÉ ---
+    # Botão de ação
+    if st.button("🪄 Processar Arquivos", type="primary"):
+        with st.spinner("Gerando relatório..."):
+            time.sleep(2)  # Simulação de processamento
+            st.balloons()
+            st.toast("Relatório gerado com sucesso!", icon="🎉")
+
+# --- Rodapé ---
 st.markdown("---")
-st.caption("Sistema de Upload • Nenhum elemento padrão visível")
+st.caption("Sistema de Upload • Interface 100% customizada")
