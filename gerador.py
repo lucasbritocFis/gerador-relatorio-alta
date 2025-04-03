@@ -11,16 +11,31 @@ from PyPDF2 import PdfReader, PdfWriter
 import numpy as np
 import tempfile
 import requests
+import shutil
 
 # URL do modelo hospedado no GitHub (substitua pelo seu URL raw)
 MODELO_URL = "https://raw.githubusercontent.com/seuusuario/gerador-relatorio-alta/main/Modelo_RESUMO_ALTA.pdf"
 
-# Função para baixar o modelo do GitHub
+# Função para baixar o modelo do GitHub com verificação
 def get_modelo_pdf():
-    response = requests.get(MODELO_URL)
-    with open("Modelo_RESUMO_ALTA.pdf", "wb") as f:
-        f.write(response.content)
-    return "Modelo_RESUMO_ALTA.pdf"
+    try:
+        response = requests.get(MODELO_URL, timeout=10)
+        response.raise_for_status()  # Verifica se o download foi bem-sucedido
+        modelo_path = "Modelo_RESUMO_ALTA.pdf"
+        with open(modelo_path, "wb") as f:
+            f.write(response.content)
+        
+        # Verifica se o PDF é válido
+        try:
+            with open(modelo_path, "rb") as f:
+                PdfReader(f)
+            return modelo_path
+        except Exception as e:
+            st.error(f"Erro ao verificar o PDF baixado: {e}")
+            raise
+    except Exception as e:
+        st.error(f"Falha ao baixar o modelo: {e}")
+        raise
 
 # Função para arredondar bordas de imagens
 def arrendondar_imagem(caminho_imagem, raio=20):
@@ -139,21 +154,31 @@ def cortar_ate_texto(imagem):
 
 # Função principal para gerar o PDF final
 def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh):
-    modelo_path = get_modelo_pdf()
-    pdf_files = [pdf_img1, pdf_img2, pdf_img3, pdf_img4]
-    all_images, text = processar_pdfs(pdf_files)
+    try:
+        modelo_path = get_modelo_pdf()
+        pdf_files = [pdf_img1, pdf_img2, pdf_img3, pdf_img4]
+        all_images, text = processar_pdfs(pdf_files)
 
-    # Processar DVH
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_dvh:
-        tmp_dvh.write(pdf_dvh.read())
-        dvh_images = convert_from_path(tmp_dvh.name, dpi=300)
-        dvh_images[0].save("anexo_dvh.png", "PNG")
-        os.remove(tmp_dvh.name)
+        # Processar DVH
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_dvh:
+            tmp_dvh.write(pdf_dvh.read())
+            tmp_dvh_path = tmp_dvh.name
 
-    output_jpgs, nome_paciente, id_paciente = criar_paginas_intermediarias(all_images, text, "anexo_dvh.png")
+        try:
+            dvh_images = convert_from_path(tmp_dvh_path, dpi=300)
+            dvh_images[0].save("anexo_dvh.png", "PNG")
+            
+            output_jpgs, nome_paciente, id_paciente = criar_paginas_intermediarias(all_images, text, "anexo_dvh.png")
 
-    pdf_modelo = PdfReader(modelo_path)
-    output = PdfWriter()
+            # Usar pikepdf como fallback se PyPDF2 falhar
+            try:
+                pdf_modelo = PdfReader(modelo_path)
+            except Exception as e:
+                st.warning("PyPDF2 falhou, tentando pikepdf...")
+                import pikepdf
+                pdf_modelo = pikepdf.Pdf.open(modelo_path)
+
+            output = PdfWriter()
 
     # Página 1: Capa
     pagina1 = pdf_modelo.pages[0]
@@ -209,12 +234,28 @@ def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_d
     # Página 8: Intacta
     output.add_page(pdf_modelo.pages[7])
 
-    # Salvar o PDF final em um arquivo temporário
+  # Salvar o PDF final
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
         output.write(tmp_file)
         tmp_file_path = tmp_file.name
 
-    return tmp_file_path
+        return tmp_file_path
+
+    finally:
+        # Limpeza de arquivos temporários
+        if os.path.exists(tmp_dvh_path):
+            os.remove(tmp_dvh_path)
+        if os.path.exists("anexo_dvh.png"):
+            os.remove("anexo_dvh.png")
+        for jpg in output_jpgs:
+            if os.path.exists(jpg):
+                os.remove(jpg)
+            if os.path.exists("anexo_temp.jpg"):
+                os.remove("anexo_temp.jpg")
+
+    except Exception as e:
+        st.error(f"Erro ao gerar PDF: {str(e)}")
+        raise
 
 # Interface do Streamlit
 st.title("Gerador de Relatório de Alta")
