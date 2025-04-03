@@ -316,98 +316,109 @@ def cortar_ate_texto(imagem):
         st.warning(f"Erro ao cortar imagem: {str(e)}")
         return imagem
 
+
+
 import streamlit as st
-from streamlit.components.v1 import html
 import time
+import base64
+from PIL import Image
+from PyPDF2 import PdfReader
 
 # --- Configuração da Página ---
-st.set_page_config(page_title="Upload Totalmente Custom", layout="centered")
+st.set_page_config(
+    page_title="Gerador de Relatórios",
+    page_icon="📄",
+    layout="wide"
+)
 
-# --- CSS Nuclear (Oculta o uploader mas mantém funcionalidade) ---
+# --- Estilos Customizados ---
 st.markdown("""
-<style>
-    /* Container principal - mantém funcional mas invisível */
-    div[data-testid="stFileUploader"] {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-    }
-    
-    /* Nossa UI customizada visível */
-    .custom-upload-area {
-        border: 3px dashed #4e8cff;
-        border-radius: 20px;
-        padding: 50px;
-        text-align: center;
-        background: #f8faff;
-        cursor: pointer;
-        transition: all 0.3s;
-        margin: 20px 0;
-    }
-    .custom-upload-area:hover {
-        background: #e6f0ff;
-        transform: scale(1.01);
-    }
-    .upload-icon {
-        font-size: 60px;
-        margin-bottom: 15px;
-        animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-    }
-</style>
+    <style>
+        body {
+            background-color: #f4f7fc;
+        }
+        .stApp {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .upload-box {
+            border: 3px dashed #4e8cff;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #eef4ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-box:hover {
+            background: #dae9ff;
+        }
+        .success-box {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .preview-box {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        .preview-box img {
+            border-radius: 10px;
+            width: 100%;
+        }
+    </style>
 """, unsafe_allow_html=True)
 
 # --- Título ---
-st.title("📤 Upload Personalizado")
+st.title("📄 Gerador de Relatórios de Alta")
+st.markdown("**Envie seus arquivos e gere um relatório completo automaticamente.**")
 
-# --- Área Customizada que Ativa o Upload Real ---
-html("""
-<div class="custom-upload-area" onclick="document.getElementById('file-uploader').click()">
-    <div class="upload-icon">📤</div>
-    <h3>Solte seus arquivos aqui</h3>
-    <p>Ou clique para selecionar</p>
-    <p style="font-size: 0.8em; color: #6c757d;">Formatos aceitos: PDF • Máx. 200MB</p>
-</div>
-""")
+# --- Seção de Upload ---
+st.subheader("📤 Envie seus Arquivos")
 
-# --- Uploader Real (invisível mas funcional) ---
 uploaded_files = st.file_uploader(
-    "Selecione arquivos",
-    type="pdf",
-    accept_multiple_files=True,
-    label_visibility="collapsed",
-    key="file-uploader"  # IMPORTANTE: mesmo ID usado no JavaScript
+    "Selecione até 4 arquivos de imagem (PDF) e 1 DVH",
+    type=["pdf"],
+    accept_multiple_files=True
 )
 
-# --- Feedback Visual ---
+# --- Processamento dos Arquivos ---
 if uploaded_files:
-    st.success(f"✅ {len(uploaded_files)} arquivo(s) carregado(s)!")
-    with st.expander("📁 Ver arquivos", expanded=True):
-        cols = st.columns(2)
-        for idx, file in enumerate(uploaded_files):
-            with cols[idx % 2]:
-                st.info(f"""
-                **{file.name}**  
-                Tamanho: {len(file.getvalue()) / 1024:.2f} KB
-                """)
+    st.markdown('<div class="success-box">✅ Arquivos carregados com sucesso!</div>', unsafe_allow_html=True)
 
-    # Botão de ação
-    if st.button("🪄 Processar Arquivos", type="primary"):
-        with st.spinner("Gerando relatório..."):
-            time.sleep(2)  # Simulação de processamento
+    # Exibir miniaturas das imagens extraídas
+    st.subheader("🔍 Pré-visualização")
+    cols = st.columns(len(uploaded_files))
+    
+    for i, file in enumerate(uploaded_files):
+        with cols[i]:
+            try:
+                pdf_reader = PdfReader(file)
+                page = pdf_reader.pages[0]
+                text = page.extract_text()[:200]  # Exibir um trecho do texto
+                st.info(f"**{file.name}**\n\n{text}...")
+            except:
+                st.warning(f"Não foi possível extrair texto de {file.name}")
+
+    # Botão para gerar o relatório
+    if st.button("📑 Gerar Relatório", use_container_width=True):
+        with st.spinner("🔄 Processando arquivos..."):
+            time.sleep(3)  # Simulação de processamento
+            st.success("✅ Relatório gerado com sucesso!")
             st.balloons()
-            st.toast("Relatório gerado com sucesso!", icon="🎉")
+            
+            # Simulação de download de relatório final
+            pdf_dummy = "Seu relatório foi gerado!"
+            pdf_b64 = base64.b64encode(pdf_dummy.encode()).decode()
+            href = f'<a href="data:file/pdf;base64,{pdf_b64}" download="relatorio_final.pdf">📥 Baixar Relatório</a>'
+            st.markdown(href, unsafe_allow_html=True)
 
 # --- Rodapé ---
 st.markdown("---")
-st.caption("Sistema de Upload • Interface 100% customizada")
+st.caption("🔹 Desenvolvido para uma experiência inovadora.")
+
