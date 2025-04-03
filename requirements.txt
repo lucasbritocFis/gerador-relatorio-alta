@@ -1,0 +1,8 @@
+streamlit
+PyMuPDF
+pillow
+reportlab
+pdf2image
+PyPDF2
+numpy
+pyngrok
