@@ -154,6 +154,11 @@ def cortar_ate_texto(imagem):
 
 # Função principal para gerar o PDF final
 def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh):
+    # Initialize variables that will be cleaned up
+    output_jpgs = []
+    tmp_dvh_path = None
+    tmp_file_path = None
+    
     try:
         modelo_path = get_modelo_pdf()
         pdf_files = [pdf_img1, pdf_img2, pdf_img3, pdf_img4]
@@ -241,9 +246,14 @@ def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_d
         
             return tmp_file_path
         
-        finally:
-            # Limpeza de arquivos temporários
-            if os.path.exists(tmp_dvh_path):
+        except Exception as e:
+            st.error(f"Erro durante o processamento do PDF: {str(e)}")
+            raise
+        
+    finally:
+        # Limpeza de arquivos temporários
+        try:
+            if tmp_dvh_path and os.path.exists(tmp_dvh_path):
                 os.remove(tmp_dvh_path)
             if os.path.exists("anexo_dvh.png"):
                 os.remove("anexo_dvh.png")
@@ -252,10 +262,10 @@ def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_d
                     os.remove(jpg)
             if os.path.exists("anexo_temp.jpg"):
                 os.remove("anexo_temp.jpg")
-        
-    except Exception as e:
-        st.error(f"Erro ao gerar PDF: {str(e)}")
-        raise
+            if tmp_file_path and os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
+        except Exception as cleanup_error:
+            st.warning(f"Erro durante limpeza de arquivos temporários: {cleanup_error}")
 
 # Interface do Streamlit
 st.title("Gerador de Relatório de Alta")
