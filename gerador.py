@@ -315,10 +315,16 @@ def cortar_ate_texto(imagem):
     except Exception as e:
         st.warning(f"Erro ao cortar imagem: {str(e)}")
         return imagem
-
-# Interface Streamlit
 import streamlit as st
 import time
+from io import BytesIO
+
+# --- CONFIGURAÇÃO DA PÁGINA ---
+st.set_page_config(
+    page_title="Upload de PDFs Moderno",
+    page_icon="📤",
+    layout="centered"
+)
 
 # --- CSS PERSONALIZADO ---
 st.markdown("""
@@ -331,10 +337,11 @@ st.markdown("""
         padding: 30px !important;
         transition: all 0.3s;
     }
-    /* Texto */
+    /* Texto da caixa */
     .stFileUploader > div > div > small {
         font-size: 16px !important;
         color: #2c3e50 !important;
+        font-weight: 500;
     }
     /* Hover */
     .stFileUploader > div > div:hover {
@@ -349,46 +356,98 @@ st.markdown("""
         margin-bottom: 10px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         border-left: 3px solid #4e8cff;
+        transition: transform 0.2s;
+    }
+    .file-card:hover {
+        transform: translateY(-3px);
+    }
+    /* Botão de limpar */
+    .stButton>button {
+        border: 1px solid #ff4b4b !important;
+        color: #ff4b4b !important;
+        background: white !important;
+    }
+    .stButton>button:hover {
+        background: #fff0f0 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- TÍTULO ---
+# --- TÍTULO E DESCRIÇÃO ---
 st.title("📤 Upload de PDFs")
-st.caption("Arraste os arquivos para a área abaixo ou clique para selecionar")
+st.markdown("""
+    <p style='text-align: center; color: #6c757d;'>
+    Arraste os arquivos para a área abaixo ou clique para selecionar.<br>
+    <span style='font-size: 0.9em;'>Formatos suportados: PDF (máx. 200MB cada)</span>
+    </p>
+""", unsafe_allow_html=True)
 
 # --- UPLOADER ---
 uploaded_files = st.file_uploader(
     label=" ",
     type="pdf",
     accept_multiple_files=True,
-    label_visibility="collapsed"
+    label_visibility="collapsed",
+    help="Selecione os PDFs para gerar o relatório"
 )
 
-# --- PRÉ-VISUALIZAÇÃO ---
+# --- PRÉ-VISUALIZAÇÃO DOS ARQUIVOS ---
 if uploaded_files:
-    st.success(f"✅ {len(uploaded_files)} arquivo(s) carregado(s)!")
+    # Feedback de sucesso
+    st.success(f"✅ **{len(uploaded_files)} arquivo(s) carregado(s)!**")
     
-    # Barra de progresso
-    progress = st.progress(0)
-    for i in range(100):
-        time.sleep(0.01)
-        progress.progress(i + 1)
+    # Barra de progresso (simulada)
+    with st.status("Processando arquivos...", expanded=True) as status:
+        progress_bar = st.progress(0)
+        for percent in range(0, 101, 10):
+            time.sleep(0.1)
+            progress_bar.progress(percent)
+        status.update(label="Pronto!", state="complete", expanded=False)
     
-    # Cards com nomes dos arquivos
-    st.subheader("📂 Arquivos Prontos:")
+    # Cards com detalhes dos arquivos
+    st.subheader("📂 Arquivos Carregados:")
     cols = st.columns(2)
     for i, file in enumerate(uploaded_files):
         with cols[i % 2]:
+            file_size = len(file.getvalue()) / 1024  # Tamanho em KB
             st.markdown(f"""
             <div class="file-card">
                 <strong>📄 {file.name}</strong>
-                <p style="color: #6c757d; font-size: 0.8em;">
-                    Tamanho: {len(file.getvalue()) / 1024:.2f} KB
+                <p style="color: #6c757d; font-size: 0.8em; margin: 5px 0;">
+                    Tamanho: {file_size:.2f} KB<br>
+                    Tipo: PDF
                 </p>
             </div>
             """, unsafe_allow_html=True)
+    
+    # Botão de ação (exemplo: gerar relatório)
+    if st.button("🪄 **Gerar Relatório Consolidado**", type="primary", use_container_width=True):
+        with st.spinner("Unindo PDFs..."):
+            time.sleep(2)  # Simulação de processamento
+            st.toast("Relatório gerado com sucesso!", icon="🎉")
+            
+            # Simulação de um PDF gerado (substitua pelo seu código real)
+            fake_pdf = BytesIO(b"%PDF-1.4 fake-pdf-for-demo")
+            st.download_button(
+                label="⬇️ Baixar Relatório",
+                data=fake_pdf,
+                file_name="relatorio_consolidado.pdf",
+                mime="application/pdf"
+            )
+    
+    # Botão para limpar arquivos (opcional)
+    if st.button("🗑️ Limpar Arquivos", use_container_width=True):
+        st.session_state.uploaded_files = []
+        st.rerun()
 
+# --- MENSAGEM SE NÃO HOUVER ARQUIVOS ---
+elif not uploaded_files:
+    st.markdown("""
+    <div style='text-align: center; margin-top: 20px; color: #6c757d;'>
+        <p>Nenhum arquivo carregado ainda.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-
-
+# --- RODAPÉ ---
+st.markdown("---")
+st.caption("Desenvolvido com Streamlit • ✉️ suporte@empresa.com")
