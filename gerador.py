@@ -156,7 +156,7 @@ def cortar_ate_texto(imagem):
 def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh):
     try:
         modelo_path = get_modelo_pdf()
-        pdf_files = [pdf_img1, pdf_img2, pdf_img3, pdf_img4]
+        pdf_files = [pdf_img1, pdf_img2, pdf_img3, pdf_images4]
         all_images, text = processar_pdfs(pdf_files)
 
         # Processar DVH
@@ -180,82 +180,82 @@ def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_d
 
             output = PdfWriter()
 
-    # Página 1: Capa
-    pagina1 = pdf_modelo.pages[0]
-    packet = io.BytesIO()
-    can = canvas.Canvas(packet, pagesize=letter)
-    can.setStrokeColorRGB(0.82, 0.70, 0.53)
-    can.setFillColorRGB(0.82, 0.70, 0.53)
-    can.setFont("Helvetica-Bold", 15)
-    can.drawString(25, 630, nome_paciente)
-    can.drawString(25, 600, "ID: " + id_paciente)
-    can.save()
-    packet.seek(0)
-    novo_pdf = PdfReader(packet)
-    pagina1.merge_page(novo_pdf.pages[0])
-    output.add_page(pagina1)
+            # Página 1: Capa
+            pagina1 = pdf_modelo.pages[0]
+            packet = io.BytesIO()
+            can = canvas.Canvas(packet, pagesize=letter)
+            can.setStrokeColorRGB(0.82, 0.70, 0.53)
+            can.setFillColorRGB(0.82, 0.70, 0.53)
+            can.setFont("Helvetica-Bold", 15)
+            can.drawString(25, 630, nome_paciente)
+            can.drawString(25, 600, "ID: " + id_paciente)
+            can.save()
+            packet.seek(0)
+            novo_pdf = PdfReader(packet)
+            pagina1.merge_page(novo_pdf.pages[0])
+            output.add_page(pagina1)
 
-    # Página 2: Relatório de alta
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_relatorio:
-        tmp_relatorio.write(pdf_relatorio.read())
-        imagens = convert_from_path(tmp_relatorio.name, dpi=300)
-        img_cortada = cortar_ate_texto(imagens[0])
-        img_cortada.save("anexo_temp.jpg", "JPEG")
-        os.remove(tmp_relatorio.name)
-
-    packet = io.BytesIO()
-    can = canvas.Canvas(packet, pagesize=letter)
-    can.drawImage("anexo_temp.jpg", 40, 120, width=450, height=450)
-    can.save()
-    packet.seek(0)
-    novo_pdf = PdfReader(packet)
-    pagina2 = pdf_modelo.pages[1]
-    pagina2.merge_page(novo_pdf.pages[0])
-    output.add_page(pagina2)
-
-    # Páginas 3 a 7: Imagens geradas
-    for i in range(2, 7):
-        pagina = pdf_modelo.pages[i]
-        packet = io.BytesIO()
-        can = canvas.Canvas(packet, pagesize=letter)
-        can.setFillColorRGB(0.82, 0.70, 0.53)
-        can.setFont("Helvetica-Bold", 15)
-        can.drawString(60, 730, nome_paciente)
-        img_idx = i - 2
-        arrendondar_imagem(output_jpgs[img_idx], raio=60)
-        can.drawImage(output_jpgs[img_idx], 55, 40, width=420, height=530, mask="auto")
-        can.setFont("Helvetica", 5)
-        can.save()
-        packet.seek(0)
-        novo_pdf = PdfReader(packet)
-        pagina.merge_page(novo_pdf.pages[0])
-        output.add_page(pagina)
-
-    # Página 8: Intacta
-    output.add_page(pdf_modelo.pages[7])
-
-  # Salvar o PDF final
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        output.write(tmp_file)
-        tmp_file_path = tmp_file.name
-
-        return tmp_file_path
-
-    finally:
-        # Limpeza de arquivos temporários
-        if os.path.exists(tmp_dvh_path):
-            os.remove(tmp_dvh_path)
-        if os.path.exists("anexo_dvh.png"):
-            os.remove("anexo_dvh.png")
-        for jpg in output_jpgs:
-            if os.path.exists(jpg):
-                os.remove(jpg)
-            if os.path.exists("anexo_temp.jpg"):
-                os.remove("anexo_temp.jpg")
-
-    except Exception as e:
-        st.error(f"Erro ao gerar PDF: {str(e)}")
-        raise
+            # Página 2: Relatório de alta
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_relatorio:
+                tmp_relatorio.write(pdf_relatorio.read())
+                imagens = convert_from_path(tmp_relatorio.name, dpi=300)
+                img_cortada = cortar_ate_texto(imagens[0])
+                img_cortada.save("anexo_temp.jpg", "JPEG")
+                os.remove(tmp_relatorio.name)
+        
+            packet = io.BytesIO()
+            can = canvas.Canvas(packet, pagesize=letter)
+            can.drawImage("anexo_temp.jpg", 40, 120, width=450, height=450)
+            can.save()
+            packet.seek(0)
+            novo_pdf = PdfReader(packet)
+            pagina2 = pdf_modelo.pages[1]
+            pagina2.merge_page(novo_pdf.pages[0])
+            output.add_page(pagina2)
+        
+            # Páginas 3 a 7: Imagens geradas
+            for i in range(2, 7):
+                pagina = pdf_modelo.pages[i]
+                packet = io.BytesIO()
+                can = canvas.Canvas(packet, pagesize=letter)
+                can.setFillColorRGB(0.82, 0.70, 0.53)
+                can.setFont("Helvetica-Bold", 15)
+                can.drawString(60, 730, nome_paciente)
+                img_idx = i - 2
+                arrendondar_imagem(output_jpgs[img_idx], raio=60)
+                can.drawImage(output_jpgs[img_idx], 55, 40, width=420, height=530, mask="auto")
+                can.setFont("Helvetica", 5)
+                can.save()
+                packet.seek(0)
+                novo_pdf = PdfReader(packet)
+                pagina.merge_page(novo_pdf.pages[0])
+                output.add_page(pagina)
+        
+            # Página 8: Intacta
+            output.add_page(pdf_modelo.pages[7])
+        
+          # Salvar o PDF final
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+                output.write(tmp_file)
+                tmp_file_path = tmp_file.name
+        
+                return tmp_file_path
+        
+            finally:
+                # Limpeza de arquivos temporários
+                if os.path.exists(tmp_dvh_path):
+                    os.remove(tmp_dvh_path)
+                if os.path.exists("anexo_dvh.png"):
+                    os.remove("anexo_dvh.png")
+                for jpg in output_jpgs:
+                    if os.path.exists(jpg):
+                        os.remove(jpg)
+                    if os.path.exists("anexo_temp.jpg"):
+                        os.remove("anexo_temp.jpg")
+        
+            except Exception as e:
+                st.error(f"Erro ao gerar PDF: {str(e)}")
+                raise
 
 # Interface do Streamlit
 st.title("Gerador de Relatório de Alta")
