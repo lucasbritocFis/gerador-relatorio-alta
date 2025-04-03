@@ -318,98 +318,86 @@ def cortar_ate_texto(imagem):
 
 import streamlit as st
 import time
-import base64
 
-# --- Configuração da Página ---
-st.set_page_config(
-    page_title="Gerador de Relatórios",
-    page_icon="📄",
-    layout="wide"
-)
+# Configuração da página
+st.set_page_config(page_title="Gerador de Relatórios", layout="wide")
 
-# --- Estilos Customizados ---
+# CSS para personalização
 st.markdown("""
     <style>
-        .stApp {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        .stButton>button {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            border: none;
+        }
+        .stButton>button:hover {
+            background-color: #45a049;
         }
         .upload-box {
-            border: 3px dashed #4e8cff;
-            border-radius: 15px;
-            padding: 20px;
+            border: 2px dashed #4e8cff;
+            border-radius: 10px;
+            padding: 10px;
             text-align: center;
-            background: #eef4ff;
+            background: #f8faff;
             cursor: pointer;
-            transition: all 0.3s;
         }
         .upload-box:hover {
-            background: #dae9ff;
+            background: #e6f0ff;
         }
-        .success-box {
-            background-color: #d4edda;
-            color: #155724;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
+        .custom-title {
+            font-size: 18px;
             font-weight: bold;
-        }
-        .custom-button {
-            background: #4e8cff;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            border-radius: 8px;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-        .custom-button:hover {
-            background: #3a76d8;
+            color: #333;
+            margin-bottom: 10px;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# --- Título ---
+# Título
 st.title("📄 Gerador de Relatórios de Alta")
-st.markdown("**Envie seus arquivos e gere um relatório completo automaticamente.**")
 
-# --- Layout de Colunas ---
-col1, col2, col3 = st.columns([2, 1, 1])
+# Criar duas colunas
+col1, col2 = st.columns([2, 1])
 
-# --- Coluna 1: Upload das imagens e DVH ---
+# 📌 **Coluna 1: Uploads das Imagens e DVH**
 with col1:
-    st.subheader("📤 Imagens e DVH")
-    pdf_img1 = st.file_uploader("Imagem 1", type="pdf", key="img1")
-    pdf_img2 = st.file_uploader("Imagem 2", type="pdf", key="img2")
-    pdf_img3 = st.file_uploader("Imagem 3", type="pdf", key="img3")
-    pdf_img4 = st.file_uploader("Imagem 4", type="pdf", key="img4")
-    pdf_dvh = st.file_uploader("DVH", type="pdf", key="dvh")
+    st.markdown('<p class="custom-title">📂 Upload das Imagens de Tratamento</p>', unsafe_allow_html=True)
 
-# --- Coluna 2: Upload do Relatório de Alta ---
+    # Linha com Imagem 1 e Imagem 2
+    row1_col1, row1_col2 = st.columns(2)
+    with row1_col1:
+        img1 = st.file_uploader("Imagem 1", type="pdf", key="img1")
+    with row1_col2:
+        img2 = st.file_uploader("Imagem 2", type="pdf", key="img2")
+
+    # Linha com Imagem 3 e Imagem 4
+    row2_col1, row2_col2 = st.columns(2)
+    with row2_col1:
+        img3 = st.file_uploader("Imagem 3", type="pdf", key="img3")
+    with row2_col2:
+        img4 = st.file_uploader("Imagem 4", type="pdf", key="img4")
+
+    # DVH sozinho abaixo das imagens
+    st.markdown('<p class="custom-title">📊 Upload do DVH</p>', unsafe_allow_html=True)
+    dvh = st.file_uploader("Arquivo DVH", type="pdf", key="dvh")
+
+# 📌 **Coluna 2 (mais longa): Upload do Relatório e Botão**
 with col2:
-    st.subheader("📄 Relatório de Alta")
-    pdf_relatorio = st.file_uploader("Relatório", type="pdf", key="relatorio")
+    st.markdown('<p class="custom-title">📜 Upload do Relatório de Alta</p>', unsafe_allow_html=True)
+    relatorio = st.file_uploader("Relatório de Alta", type="pdf", key="relatorio")
 
-# --- Coluna 3: Botão para gerar o relatório ---
-with col3:
-    st.subheader("⚡ Gerar Relatório")
-    st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)  # Espaço para alinhar o botão
-    if st.button("📑 Gerar Relatório", use_container_width=True):
-        with st.spinner("🔄 Processando arquivos..."):
-            time.sleep(3)  # Simulação de processamento
+    st.markdown("<br><br>", unsafe_allow_html=True)  # Espaçamento extra
+
+    # Botão para gerar relatório
+    if st.button("🚀 Gerar Relatório", type="primary"):
+        with st.spinner("Processando... Aguarde."):
+            time.sleep(2)  # Simula o processamento
             st.success("✅ Relatório gerado com sucesso!")
             st.balloons()
-            
-            # Simulação de download de relatório final
-            pdf_dummy = "Seu relatório foi gerado!"
-            pdf_b64 = base64.b64encode(pdf_dummy.encode()).decode()
-            href = f'<a href="data:file/pdf;base64,{pdf_b64}" download="relatorio_final.pdf" class="custom-button">📥 Baixar Relatório</a>'
-            st.markdown(href, unsafe_allow_html=True)
 
-# --- Rodapé ---
-st.markdown("---")
-st.caption("🔹 Desenvolvido para uma experiência inovadora.")
 
 
