@@ -322,31 +322,48 @@ import time
 # Configuração da página
 st.set_page_config(page_title="Gerador de Relatórios", layout="wide")
 
-# CSS para personalização
+# CSS para personalizar os uploads
 st.markdown("""
     <style>
-        .stButton>button {
-            background-color: #4CAF50;
-            color: white;
-            font-size: 16px;
-            padding: 12px;
-            width: 100%;
-            border-radius: 8px;
-            border: none;
+        /* Esconde o uploader padrão */
+        div[data-testid="stFileUploader"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
-        .stButton>button:hover {
-            background-color: #45a049;
-        }
+        
+        /* Estilização das áreas de upload */
         .upload-box {
-            border: 2px dashed #4e8cff;
+            border: 3px dashed #4e8cff;
             border-radius: 10px;
-            padding: 10px;
+            padding: 30px;
             text-align: center;
             background: #f8faff;
             cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+            color: #4e8cff;
+            font-weight: bold;
         }
         .upload-box:hover {
             background: #e6f0ff;
+            transform: scale(1.02);
+        }
+        .upload-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+            color: #4e8cff;
+        }
+        .uploaded-file {
+            color: green;
+            font-size: 14px;
+            margin-top: 5px;
         }
         .custom-title {
             font-size: 18px;
@@ -370,25 +387,51 @@ with col1:
     # Linha com Imagem 1 e Imagem 2
     row1_col1, row1_col2 = st.columns(2)
     with row1_col1:
-        img1 = st.file_uploader("Imagem 1", type="pdf", key="img1")
+        img1 = st.file_uploader("", type="pdf", key="img1")
+        st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'img1\').click()">'
+                    f'<div class="upload-icon">📄</div>Imagem 1</div>', unsafe_allow_html=True)
+        if img1:
+            st.markdown(f'<div class="uploaded-file">✅ {img1.name}</div>', unsafe_allow_html=True)
+
     with row1_col2:
-        img2 = st.file_uploader("Imagem 2", type="pdf", key="img2")
+        img2 = st.file_uploader("", type="pdf", key="img2")
+        st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'img2\').click()">'
+                    f'<div class="upload-icon">📄</div>Imagem 2</div>', unsafe_allow_html=True)
+        if img2:
+            st.markdown(f'<div class="uploaded-file">✅ {img2.name}</div>', unsafe_allow_html=True)
 
     # Linha com Imagem 3 e Imagem 4
     row2_col1, row2_col2 = st.columns(2)
     with row2_col1:
-        img3 = st.file_uploader("Imagem 3", type="pdf", key="img3")
+        img3 = st.file_uploader("", type="pdf", key="img3")
+        st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'img3\').click()">'
+                    f'<div class="upload-icon">📄</div>Imagem 3</div>', unsafe_allow_html=True)
+        if img3:
+            st.markdown(f'<div class="uploaded-file">✅ {img3.name}</div>', unsafe_allow_html=True)
+
     with row2_col2:
-        img4 = st.file_uploader("Imagem 4", type="pdf", key="img4")
+        img4 = st.file_uploader("", type="pdf", key="img4")
+        st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'img4\').click()">'
+                    f'<div class="upload-icon">📄</div>Imagem 4</div>', unsafe_allow_html=True)
+        if img4:
+            st.markdown(f'<div class="uploaded-file">✅ {img4.name}</div>', unsafe_allow_html=True)
 
     # DVH sozinho abaixo das imagens
     st.markdown('<p class="custom-title">📊 Upload do DVH</p>', unsafe_allow_html=True)
-    dvh = st.file_uploader("Arquivo DVH", type="pdf", key="dvh")
+    dvh = st.file_uploader("", type="pdf", key="dvh")
+    st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'dvh\').click()">'
+                f'<div class="upload-icon">📉</div>Arquivo DVH</div>', unsafe_allow_html=True)
+    if dvh:
+        st.markdown(f'<div class="uploaded-file">✅ {dvh.name}</div>', unsafe_allow_html=True)
 
 # 📌 **Coluna 2 (mais longa): Upload do Relatório e Botão**
 with col2:
     st.markdown('<p class="custom-title">📜 Upload do Relatório de Alta</p>', unsafe_allow_html=True)
-    relatorio = st.file_uploader("Relatório de Alta", type="pdf", key="relatorio")
+    relatorio = st.file_uploader("", type="pdf", key="relatorio")
+    st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'relatorio\').click()">'
+                f'<div class="upload-icon">📑</div>Relatório de Alta</div>', unsafe_allow_html=True)
+    if relatorio:
+        st.markdown(f'<div class="uploaded-file">✅ {relatorio.name}</div>', unsafe_allow_html=True)
 
     st.markdown("<br><br>", unsafe_allow_html=True)  # Espaçamento extra
 
@@ -398,6 +441,7 @@ with col2:
             time.sleep(2)  # Simula o processamento
             st.success("✅ Relatório gerado com sucesso!")
             st.balloons()
+
 
 
 
