@@ -156,7 +156,7 @@ def cortar_ate_texto(imagem):
 def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh):
     try:
         modelo_path = get_modelo_pdf()
-        pdf_files = [pdf_img1, pdf_img2, pdf_img3, pdf_images4]
+        pdf_files = [pdf_img1, pdf_img2, pdf_img3, pdf_img4]
         all_images, text = processar_pdfs(pdf_files)
 
         # Processar DVH
@@ -234,28 +234,28 @@ def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_d
             # Página 8: Intacta
             output.add_page(pdf_modelo.pages[7])
         
-          # Salvar o PDF final
+            # Salvar o PDF final
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
                 output.write(tmp_file)
                 tmp_file_path = tmp_file.name
         
-                return tmp_file_path
+            return tmp_file_path
         
-    finally:
-        # Limpeza de arquivos temporários
-        if os.path.exists(tmp_dvh_path):
-            os.remove(tmp_dvh_path)
-        if os.path.exists("anexo_dvh.png"):
-            os.remove("anexo_dvh.png")
-        for jpg in output_jpgs:
-            if os.path.exists(jpg):
-                os.remove(jpg)
+        finally:
+            # Limpeza de arquivos temporários
+            if os.path.exists(tmp_dvh_path):
+                os.remove(tmp_dvh_path)
+            if os.path.exists("anexo_dvh.png"):
+                os.remove("anexo_dvh.png")
+            for jpg in output_jpgs:
+                if os.path.exists(jpg):
+                    os.remove(jpg)
             if os.path.exists("anexo_temp.jpg"):
                 os.remove("anexo_temp.jpg")
         
- except Exception as e:
-    st.error(f"Erro ao gerar PDF: {str(e)}")
-    raise
+    except Exception as e:
+        st.error(f"Erro ao gerar PDF: {str(e)}")
+        raise
 
 # Interface do Streamlit
 st.title("Gerador de Relatório de Alta")
