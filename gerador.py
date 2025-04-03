@@ -69,68 +69,104 @@ def processar_pdfs(pdf_files):
 
 # Função para criar as páginas intermediárias (output_0 a output_4)
 def criar_paginas_intermediarias(all_images, text, dvh_path):
-    linhas = text.splitlines()
-    info_patient = linhas[13:38]
-    info_plano_curso = next((j for j in linhas if j.strip().startswith("Campos no plano")), "")
-    info_rodape = linhas[0:13]
+    try:
+        linhas = text.splitlines()
+        
+        # Verificação segura dos índices
+        info_patient = linhas[13:38] if len(linhas) > 38 else linhas  # Fallback se não houver linhas suficientes
+        
+        # Encontrar info_plano_curso com tratamento de erro
+        info_plano_curso = next((j for j in linhas if j.strip().startswith("Campos no plano")), "")
+        
+        # Extração segura do nome do paciente
+        nome_paciente = "Nome não identificado"
+        id_part = "ID não identificado"
+        
+        if len(info_patient) > 3:
+            partes = info_patient[3].split(", ")
+            if len(partes) > 1:
+                sobrenome = partes[0]
+                nomes_id = partes[1].split(" (")
+                if len(nomes_id) > 1:
+                    nomes = nomes_id[0]
+                    id_part = nomes_id[1].rstrip(")") if ")" in partes[1] else "ID não identificado"
+                    nome_paciente = f"{nomes} {sobrenome}"
+                else:
+                    nome_paciente = partes[1]  # Fallback se não conseguir separar ID
+            else:
+                nome_paciente = info_patient[3]  # Usa a linha completa como fallback
 
-    partes = info_patient[3].split(", ")
-    sobrenome = partes[0]
-    nomes_id = partes[1].split(" (")
-    nomes = nomes_id[0]
-    id_part = nomes_id[1].rstrip(")")
-    nome_paciente = nomes + " " + sobrenome
+        output_jpgs = []
+        for idx in range(5):
+            output_pdf_path = f"output_{idx}.pdf"
+            c = canvas.Canvas(output_pdf_path, pagesize=letter)
+            width, height = letter
+            c.setFont("Helvetica", 6.5)
 
-    output_jpgs = []
-    for idx in range(5):
-        output_pdf_path = f"output_{idx}.pdf"
-        c = canvas.Canvas(output_pdf_path, pagesize=letter)
-        width, height = letter
-        c.setFont("Helvetica", 6.5)
-
-        c.setLineWidth(1.5)
-        c.setStrokeColorRGB(0.82, 0.70, 0.53)
-        c.line(50, 720, 580, 720)
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(50, 710, "Informações dos " + info_plano_curso)
-        c.setFont("Helvetica", 6)
-        c.line(50, 705, 580, 705)
-        c.setStrokeColorRGB(0.0, 0.0, 0.0)
-
-        c.drawString(50, 770, info_patient[0])
-        c.drawString(50, 760, "Prontuário: ")
-        c.drawString(50, 750, info_patient[1])
-        c.drawString(110, 770, nome_paciente)
-        c.drawString(110, 760, id_part)
-        c.drawString(110, 750, info_patient[4])
-
-        if idx < 4:
-            c.drawImage(all_images[idx], 70, 50, width=500, height=500)
-            c.setFont("Helvetica", 6)
+            # [Restante do seu código de desenho...]
+            c.setLineWidth(1.5)
             c.setStrokeColorRGB(0.82, 0.70, 0.53)
-            c.line(50, 570, 580, 570)
+            c.line(50, 720, 580, 720)
             c.setFont("Helvetica-Bold", 9)
-            c.setFillColorRGB(0, 0, 0)
-            c.drawString(50, 560, "Representação Gráfica do Planejamento do Tratamento")
+            c.drawString(50, 710, "Informações dos " + info_plano_curso)
             c.setFont("Helvetica", 6)
-            c.line(50, 555, 580, 555)
-        if idx == 4:
-            c.drawImage(dvh_path, 45, 170, width=540, height=380)
-            c.setFont("Helvetica", 6)
-            c.setStrokeColorRGB(0.82, 0.70, 0.53)
-            c.line(50, 570, 580, 570)
-            c.setFont("Helvetica-Bold", 9)
-            c.setFillColorRGB(0, 0, 0)
-            c.drawString(50, 560, "Histograma Dose Volume")
-            c.setFont("Helvetica", 6)
-            c.line(50, 555, 580, 555)
+            c.line(50, 705, 580, 705)
+            c.setStrokeColorRGB(0.0, 0.0, 0.0)
 
-        c.save()
-        images = convert_from_path(output_pdf_path, dpi=300)
-        jpg_path = f"output_{idx}.jpg"
-        images[0].save(jpg_path, "JPEG")
-        output_jpgs.append(jpg_path)
-    return output_jpgs, nome_paciente, id_part
+            # Desenha informações do paciente com fallbacks
+            c.drawString(50, 770, info_patient[0] if len(info_patient) > 0 else "")
+            c.drawString(50, 760, "Prontuário: ")
+            c.drawString(50, 750, info_patient[1] if len(info_patient) > 1 else "")
+            c.drawString(110, 770, nome_paciente)
+            c.drawString(110, 760, id_part)
+            c.drawString(110, 750, info_patient[4] if len(info_patient) > 4 else "")
+
+            if idx < 4 and len(all_images) > idx:
+                try:
+                    c.drawImage(all_images[idx], 70, 50, width=500, height=500)
+                except Exception as e:
+                    st.warning(f"Erro ao desenhar imagem {idx}: {str(e)}")
+                
+                c.setFont("Helvetica", 6)
+                c.setStrokeColorRGB(0.82, 0.70, 0.53)
+                c.line(50, 570, 580, 570)
+                c.setFont("Helvetica-Bold", 9)
+                c.setFillColorRGB(0, 0, 0)
+                c.drawString(50, 560, "Representação Gráfica do Planejamento do Tratamento")
+                c.setFont("Helvetica", 6)
+                c.line(50, 555, 580, 555)
+            
+            if idx == 4:
+                try:
+                    c.drawImage(dvh_path, 45, 170, width=540, height=380)
+                except Exception as e:
+                    st.warning(f"Erro ao desenhar DVH: {str(e)}")
+                
+                c.setFont("Helvetica", 6)
+                c.setStrokeColorRGB(0.82, 0.70, 0.53)
+                c.line(50, 570, 580, 570)
+                c.setFont("Helvetica-Bold", 9)
+                c.setFillColorRGB(0, 0, 0)
+                c.drawString(50, 560, "Histograma Dose Volume")
+                c.setFont("Helvetica", 6)
+                c.line(50, 555, 580, 555)
+
+            c.save()
+            
+            try:
+                images = convert_from_path(output_pdf_path, dpi=300)
+                if images:
+                    jpg_path = f"output_{idx}.jpg"
+                    images[0].save(jpg_path, "JPEG")
+                    output_jpgs.append(jpg_path)
+            except Exception as e:
+                st.warning(f"Erro ao converter página {idx} para JPG: {str(e)}")
+
+        return output_jpgs, nome_paciente, id_part
+
+    except Exception as e:
+        st.error(f"Erro crítico ao criar páginas intermediárias: {str(e)}")
+        raise
 
 # Função para cortar imagem até o texto
 def cortar_ate_texto(imagem):
