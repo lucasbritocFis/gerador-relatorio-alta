@@ -316,13 +316,9 @@ def cortar_ate_texto(imagem):
         st.warning(f"Erro ao cortar imagem: {str(e)}")
         return imagem
 
-
-
 import streamlit as st
 import time
 import base64
-from PIL import Image
-from PyPDF2 import PdfReader
 
 # --- Configuração da Página ---
 st.set_page_config(
@@ -334,9 +330,6 @@ st.set_page_config(
 # --- Estilos Customizados ---
 st.markdown("""
     <style>
-        body {
-            background-color: #f4f7fc;
-        }
         .stApp {
             background-color: #ffffff;
             padding: 30px;
@@ -346,7 +339,7 @@ st.markdown("""
         .upload-box {
             border: 3px dashed #4e8cff;
             border-radius: 15px;
-            padding: 40px;
+            padding: 20px;
             text-align: center;
             background: #eef4ff;
             cursor: pointer;
@@ -358,18 +351,22 @@ st.markdown("""
         .success-box {
             background-color: #d4edda;
             color: #155724;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
             text-align: center;
+            font-weight: bold;
         }
-        .preview-box {
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+        .custom-button {
+            background: #4e8cff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: 0.3s;
         }
-        .preview-box img {
-            border-radius: 10px;
-            width: 100%;
+        .custom-button:hover {
+            background: #3a76d8;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -378,34 +375,27 @@ st.markdown("""
 st.title("📄 Gerador de Relatórios de Alta")
 st.markdown("**Envie seus arquivos e gere um relatório completo automaticamente.**")
 
-# --- Seção de Upload ---
-st.subheader("📤 Envie seus Arquivos")
+# --- Layout de Colunas ---
+col1, col2, col3 = st.columns([2, 1, 1])
 
-uploaded_files = st.file_uploader(
-    "Selecione até 4 arquivos de imagem (PDF) e 1 DVH",
-    type=["pdf"],
-    accept_multiple_files=True
-)
+# --- Coluna 1: Upload das imagens e DVH ---
+with col1:
+    st.subheader("📤 Imagens e DVH")
+    pdf_img1 = st.file_uploader("Imagem 1", type="pdf", key="img1")
+    pdf_img2 = st.file_uploader("Imagem 2", type="pdf", key="img2")
+    pdf_img3 = st.file_uploader("Imagem 3", type="pdf", key="img3")
+    pdf_img4 = st.file_uploader("Imagem 4", type="pdf", key="img4")
+    pdf_dvh = st.file_uploader("DVH", type="pdf", key="dvh")
 
-# --- Processamento dos Arquivos ---
-if uploaded_files:
-    st.markdown('<div class="success-box">✅ Arquivos carregados com sucesso!</div>', unsafe_allow_html=True)
+# --- Coluna 2: Upload do Relatório de Alta ---
+with col2:
+    st.subheader("📄 Relatório de Alta")
+    pdf_relatorio = st.file_uploader("Relatório", type="pdf", key="relatorio")
 
-    # Exibir miniaturas das imagens extraídas
-    st.subheader("🔍 Pré-visualização")
-    cols = st.columns(len(uploaded_files))
-    
-    for i, file in enumerate(uploaded_files):
-        with cols[i]:
-            try:
-                pdf_reader = PdfReader(file)
-                page = pdf_reader.pages[0]
-                text = page.extract_text()[:200]  # Exibir um trecho do texto
-                st.info(f"**{file.name}**\n\n{text}...")
-            except:
-                st.warning(f"Não foi possível extrair texto de {file.name}")
-
-    # Botão para gerar o relatório
+# --- Coluna 3: Botão para gerar o relatório ---
+with col3:
+    st.subheader("⚡ Gerar Relatório")
+    st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)  # Espaço para alinhar o botão
     if st.button("📑 Gerar Relatório", use_container_width=True):
         with st.spinner("🔄 Processando arquivos..."):
             time.sleep(3)  # Simulação de processamento
@@ -415,10 +405,11 @@ if uploaded_files:
             # Simulação de download de relatório final
             pdf_dummy = "Seu relatório foi gerado!"
             pdf_b64 = base64.b64encode(pdf_dummy.encode()).decode()
-            href = f'<a href="data:file/pdf;base64,{pdf_b64}" download="relatorio_final.pdf">📥 Baixar Relatório</a>'
+            href = f'<a href="data:file/pdf;base64,{pdf_b64}" download="relatorio_final.pdf" class="custom-button">📥 Baixar Relatório</a>'
             st.markdown(href, unsafe_allow_html=True)
 
 # --- Rodapé ---
 st.markdown("---")
 st.caption("🔹 Desenvolvido para uma experiência inovadora.")
+
 
