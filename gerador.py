@@ -317,45 +317,178 @@ def cortar_ate_texto(imagem):
         return imagem
 
 # Interface Streamlit
+import streamlit as st
+import os
+from datetime import datetime
+
+# Configuração da página
+st.set_page_config(
+    page_title="Gerador de Relatório de Alta",
+    page_icon="🏥",
+    layout="centered"
+)
+
+# CSS personalizado
+st.markdown("""
+<style>
+    /* Estilo geral */
+    .stApp {
+        background-color: #f5f7fa;
+    }
+    
+    /* Títulos */
+    h1 {
+        color: #2b5876;
+        text-align: center;
+        margin-bottom: 0.5em;
+    }
+    
+    /* Subtítulo */
+    .subtitle {
+        text-align: center;
+        color: #4e7c94;
+        margin-bottom: 2em;
+        font-size: 1.1em;
+    }
+    
+    /* Cards de upload */
+    .upload-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5em;
+        margin-bottom: 1em;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid #4e7c94;
+    }
+    
+    /* Botão principal */
+    .stButton>button {
+        background: linear-gradient(to right, #4e7c94, #2b5876);
+        color: white;
+        border: none;
+        padding: 0.8em 2em;
+        border-radius: 8px;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(43, 88, 118, 0.2);
+    }
+    
+    /* Mensagens de status */
+    .stSuccess {
+        border-radius: 8px;
+    }
+    
+    /* Efeito hover nos cards */
+    .upload-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Cabeçalho
 st.title("Gerador de Relatório de Alta")
-st.write("Faça upload dos arquivos necessários para gerar o relatório final")
+st.markdown('<p class="subtitle">Faça upload dos arquivos necessários para gerar o relatório final</p>', unsafe_allow_html=True)
 
-# Upload dos arquivos
-pdf_img1 = st.file_uploader("PDF Imagem 1", type="pdf")
-pdf_img2 = st.file_uploader("PDF Imagem 2", type="pdf")
-pdf_img3 = st.file_uploader("PDF Imagem 3", type="pdf")
-pdf_img4 = st.file_uploader("PDF Imagem 4", type="pdf")
-pdf_relatorio = st.file_uploader("PDF Relatório", type="pdf")
-pdf_dvh = st.file_uploader("PDF DVH", type="pdf")
-
-if st.button("Gerar PDF"):
-    if all([pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh]):
-        with st.spinner("Gerando relatório..."):
-            pdf_path = gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh)
+# Seção de upload com cards
+with st.container():
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        with st.container():
+            st.markdown('<div class="upload-card">', unsafe_allow_html=True)
+            pdf_img1 = st.file_uploader("📷 Imagem 1 (PDF)", type="pdf", key="img1")
+            st.markdown('</div>', unsafe_allow_html=True)
             
-            if pdf_path and os.path.exists(pdf_path):
-                try:
+        with st.container():
+            st.markdown('<div class="upload-card">', unsafe_allow_html=True)
+            pdf_img2 = st.file_uploader("📷 Imagem 2 (PDF)", type="pdf", key="img2")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+        with st.container():
+            st.markdown('<div class="upload-card">', unsafe_allow_html=True)
+            pdf_img3 = st.file_uploader("📷 Imagem 3 (PDF)", type="pdf", key="img3")
+            st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        with st.container():
+            st.markdown('<div class="upload-card">', unsafe_allow_html=True)
+            pdf_img4 = st.file_uploader("📷 Imagem 4 (PDF)", type="pdf", key="img4")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+        with st.container():
+            st.markdown('<div class="upload-card">', unsafe_allow_html=True)
+            pdf_relatorio = st.file_uploader("📋 Relatório Principal (PDF)", type="pdf", key="relatorio")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+        with st.container():
+            st.markdown('<div class="upload-card">', unsafe_allow_html=True)
+            pdf_dvh = st.file_uploader("📊 DVH (PDF)", type="pdf", key="dvh")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+# Botão de ação
+if st.button("✨ Gerar Relatório de Alta", key="generate_btn"):
+    if all([pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh]):
+        with st.spinner(f"Gerando relatório... {st.session_state.get('progress', '')}"):
+            try:
+                # Simulação de progresso
+                for i in range(1, 6):
+                    st.session_state.progress = f"{i*20}%"
+                    time.sleep(0.2)
+                
+                pdf_path = gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh)
+                
+                if pdf_path and os.path.exists(pdf_path):
                     with open(pdf_path, "rb") as f:
                         pdf_bytes = f.read()
                         if pdf_bytes:
-                            st.success("PDF gerado com sucesso!")
+                            st.balloons()
+                            st.success("Relatório gerado com sucesso!")
+                            
+                            # Seção de download
+                            today = datetime.now().strftime("%Y-%m-%d")
                             st.download_button(
-                                label="Baixar Relatório",
+                                label="⬇️ Baixar Relatório Completo",
                                 data=pdf_bytes,
-                                file_name="relatorio_alta.pdf",
-                                mime="application/pdf"
+                                file_name=f"Relatorio_Alta_{today}.pdf",
+                                mime="application/pdf",
+                                help="Clique para baixar o relatório de alta completo"
                             )
+                            
+                            # Visualização opcional
+                            with st.expander("🔍 Visualizar prévia do relatório"):
+                                st.write("Prévia do conteúdo gerado:")
+                                # Aqui você pode adicionar uma visualização do PDF se quiser
+                                st.image("https://via.placeholder.com/600x400?text=Prévia+do+Relatório", 
+                                         caption="Exemplo de visualização")
                         else:
                             st.error("O PDF gerado está vazio")
-                except Exception as e:
-                    st.error(f"Erro ao ler PDF: {str(e)}")
                 
                 # Limpeza final
                 try:
                     os.remove(pdf_path)
                 except Exception:
                     pass
-            else:
-                st.error("Falha ao gerar PDF")
+                    
+            except Exception as e:
+                st.error(f"Erro ao gerar relatório: {str(e)}")
     else:
-        st.error("Por favor, envie todos os arquivos necessários")
+        st.warning("⚠️ Por favor, envie todos os arquivos necessários para gerar o relatório.")
+
+# Rodapé
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; color: #6c757d; font-size: 0.9em; margin-top: 2em;">
+    <p>Sistema de Geração de Relatórios de Alta • Versão 1.0</p>
+    <p>Desenvolvido com ❤️ pelo Departamento de Medicina</p>
+</div>
+""", unsafe_allow_html=True)
+
+
+
+
