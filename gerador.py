@@ -10,6 +10,17 @@ import os
 from PyPDF2 import PdfReader, PdfWriter
 import numpy as np
 import tempfile
+import requests
+
+# URL do modelo hospedado no GitHub (substitua pelo seu URL raw)
+MODELO_URL = "https://raw.githubusercontent.com/seuusuario/gerador-relatorio-alta/main/Modelo_RESUMO_ALTA.pdf"
+
+# Função para baixar o modelo do GitHub
+def get_modelo_pdf():
+    response = requests.get(MODELO_URL)
+    with open("Modelo_RESUMO_ALTA.pdf", "wb") as f:
+        f.write(response.content)
+    return "Modelo_RESUMO_ALTA.pdf"
 
 # Função para arredondar bordas de imagens
 def arrendondar_imagem(caminho_imagem, raio=20):
@@ -127,7 +138,8 @@ def cortar_ate_texto(imagem):
     return img_cortada_final
 
 # Função principal para gerar o PDF final
-def gerar_pdf_final(modelo_path, pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh):
+def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh):
+    modelo_path = get_modelo_pdf()
     pdf_files = [pdf_img1, pdf_img2, pdf_img3, pdf_img4]
     all_images, text = processar_pdfs(pdf_files)
 
@@ -206,18 +218,9 @@ def gerar_pdf_final(modelo_path, pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_rel
 
 # Interface do Streamlit
 st.title("Gerador de Relatório de Alta")
-st.write("Faça upload dos arquivos necessários para gerar o relatório final.")
+st.write("Faça upload dos arquivos necessários para gerar o relatório final. O modelo já está embutido.")
 
-# Upload do modelo fixo
-modelo_file = st.file_uploader("Upload do Modelo (Modelo_RESUMO_ALTA.pdf)", type="pdf")
-if modelo_file:
-    with open("Modelo_RESUMO_ALTA.pdf", "wb") as f:
-        f.write(modelo_file.read())
-    modelo_path = "Modelo_RESUMO_ALTA.pdf"
-else:
-    modelo_path = None
-
-# Upload dos arquivos separadamente
+# Upload dos arquivos separadamente (sem modelo)
 pdf_img1 = st.file_uploader("Upload do PDF da Imagem 1", type="pdf")
 pdf_img2 = st.file_uploader("Upload do PDF da Imagem 2", type="pdf")
 pdf_img3 = st.file_uploader("Upload do PDF da Imagem 3", type="pdf")
@@ -226,9 +229,9 @@ pdf_relatorio = st.file_uploader("Upload do PDF do Relatório de Alta", type="pd
 pdf_dvh = st.file_uploader("Upload do PDF DVH", type="pdf")
 
 if st.button("Gerar PDF"):
-    if all([modelo_path, pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh]):
+    if all([pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh]):
         with st.spinner("Gerando o PDF..."):
-            pdf_final_path = gerar_pdf_final(modelo_path, pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh)
+            pdf_final_path = gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh)
             with open(pdf_final_path, "rb") as f:
                 st.download_button(
                     label="Baixar PDF Gerado",
@@ -238,4 +241,4 @@ if st.button("Gerar PDF"):
                 )
             os.remove(pdf_final_path)
     else:
-        st.error("Por favor, envie todos os arquivos necessários: modelo, 4 PDFs de imagens, 1 PDF de relatório de alta e 1 PDF DVH.")
+        st.error("Por favor, envie todos os arquivos necessários: 4 PDFs de imagens, 1 PDF de relatório de alta e 1 PDF DVH.")
