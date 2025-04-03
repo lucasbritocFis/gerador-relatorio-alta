@@ -13,7 +13,7 @@ import shutil
 from pdf2image import convert_from_path
 
 # URL do modelo PDF
-MODELO_URL = "https://raw.githubusercontent.com/seuusuario/gerador-relatorio-alta/main/Modelo_RESUMO_ALTA.pdf"
+MODELO_URL = "https://raw.githubusercontent.com/lucasbritocFis/gerador-relatorio-alta/main/Modelo_RESUMO_ALTA.pdf"
 
 # Função para baixar o modelo
 def get_modelo_pdf():
