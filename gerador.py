@@ -178,7 +178,7 @@ def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_d
                 import pikepdf
                 pdf_modelo = pikepdf.Pdf.open(modelo_path)
 
-    output = PdfWriter()
+            output = PdfWriter()
 
     # Página 1: Capa
     pagina1 = pdf_modelo.pages[0]
