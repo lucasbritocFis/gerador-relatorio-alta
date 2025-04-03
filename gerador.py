@@ -319,6 +319,10 @@ import streamlit as st
 import time
 from io import BytesIO
 
+import streamlit as st
+import time
+from io import BytesIO
+
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
     page_title="Upload de PDFs Moderno",
