@@ -321,88 +321,79 @@ from streamlit.components.v1 import html
 import time
 
 # --- CONFIGURAÇÃO ---
-st.set_page_config(page_title="Upload Super Custom", layout="centered")
+st.set_page_config(page_title="Upload Invisível", layout="centered")
 
-# --- CSS + HTML PERSONALIZADO ---
-custom_uploader = """
+# --- CSS NUCLEAR (esconde TUDO do uploader padrão) ---
+st.markdown("""
 <style>
-    /* Esconde o uploader padrão */
-    .stFileUploader {
+    /* Esconde o container inteiro do file_uploader */
+    div[data-testid="stFileUploader"] {
+        visibility: hidden;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Esconde o texto "Drag and drop files here" */
+    div[data-testid="stFileUploader"] > div > small {
         display: none !important;
     }
     
-    /* Container customizado */
-    .custom-upload {
+    /* Esconde o botão "Browse files" */
+    div[data-testid="stFileUploader"] > div > button {
+        display: none !important;
+    }
+    
+    /* Nossa UI customizada */
+    .fake-uploader {
         border: 3px dashed #4e8cff;
         border-radius: 20px;
-        padding: 40px;
+        padding: 50px;
         text-align: center;
         background: #f8faff;
         cursor: pointer;
         transition: all 0.3s;
-        margin-bottom: 20px;
+        margin: 20px 0;
     }
-    .custom-upload:hover {
+    .fake-uploader:hover {
         background: #e6f0ff;
-        border-color: #2e7bff;
+        transform: scale(1.01);
     }
-    
-    /* Ícone animado */
     .upload-icon {
-        font-size: 50px;
-        margin-bottom: 15px;
-        animation: bounce 2s infinite;
-    }
-    @keyframes bounce {
-        0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-        40% {transform: translateY(-20px);}
-        60% {transform: translateY(-10px);}
+        font-size: 60px;
+        margin-bottom: 10px;
     }
 </style>
-
-<div class="custom-upload" onclick="document.getElementById('real-uploader').click()">
-    <div class="upload-icon">📤</div>
-    <h3>Solte seus PDFs aqui</h3>
-    <p>Ou clique para selecionar</p>
-    <p style="font-size: 0.8em; color: #6c757d;">Máximo 200MB por arquivo</p>
-</div>
-
-<input type="file" id="real-uploader" accept=".pdf" multiple style="display: none;">
-"""
+""", unsafe_allow_html=True)
 
 # --- TÍTULO ---
-st.title("📂 Upload de Arquivos")
-html(custom_uploader, height=250)
+st.title("📤 Upload Super Custom")
 
-# --- UPLOADER REAL (hidden) ---
+# --- UPLOADER FALSO (que ativa o real) ---
+html("""
+<div class="fake-uploader" onclick="document.getElementById('real-uploader').click()">
+    <div class="upload-icon">📤</div>
+    <h3>Arraste seus PDFs aqui</h3>
+    <p>Ou clique para selecionar</p>
+    <p style="font-size: 0.8em; color: #6c757d;">Limite: 200MB por arquivo • PDF</p>
+</div>
+""")
+
+# --- UPLOADER REAL (totalmente invisível) ---
 uploaded_files = st.file_uploader(
-    "Selecione os PDFs",
+    "Upload secreto",
     type="pdf",
     accept_multiple_files=True,
-    label_visibility="collapsed"
+    label_visibility="collapsed",
+    key="hidden_uploader"  # Chave única para evitar conflitos
 )
 
-# --- FEEDBACK DOS ARQUIVOS ---
+# --- FEEDBACK ---
 if uploaded_files:
     st.success(f"✅ {len(uploaded_files)} arquivo(s) carregado(s)!")
-    
-    # Mostrar miniaturas (simulação)
-    cols = st.columns(3)
-    for i, file in enumerate(uploaded_files):
-        with cols[i % 3]:
-            st.image(
-                "https://cdn-icons-png.flaticon.com/512/337/337946.png",  # Ícone genérico de PDF
-                width=80,
-                caption=file.name
-            )
-    
-    # Botão de ação
-    if st.button("🔗 Gerar Relatório", type="primary"):
-        with st.spinner("Processando..."):
-            time.sleep(2)
-            st.balloons()
-            st.toast("Relatório pronto!", icon="🎉")
+    for file in uploaded_files:
+        st.code(f"📄 {file.name} ({len(file.getvalue()) / 1024:.2f} KB)")
 
 # --- RODAPÉ ---
 st.markdown("---")
-st.caption("Sistema de Upload Personalizado v1.0")
+st.caption("Sistema de Upload • Nenhum elemento padrão visível")
