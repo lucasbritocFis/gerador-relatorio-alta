@@ -375,7 +375,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Título
-st.title("📄 Gerador de Relatórios de Alta")
+st.markdown("---")
+st.subtitle("📄 Gerador de Relatórios de Alta")
 
 # Criar duas colunas
 col1, col2 = st.columns([2, 1])
