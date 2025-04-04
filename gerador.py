@@ -366,7 +366,7 @@ st.markdown("""
             margin-top: 5px;
         }
         .custom-title {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: bold;
             color: #333;
             margin-bottom: 10px;
