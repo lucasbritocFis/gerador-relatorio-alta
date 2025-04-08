@@ -4,445 +4,458 @@ from PIL import Image, ImageDraw
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import io
+import re
+from datetime import datetime
+import pdfplumber
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import ParagraphStyle
+from pdf2image import convert_from_path
 import os
-from PyPDF2 import PdfReader, PdfWriter
+from PyPDF2 import PdfReader, PdfWriter, Transformation
 import numpy as np
 import tempfile
-import requests
-import shutil
-from pdf2image import convert_from_path
 
-# URL do modelo PDF
-MODELO_URL = "https://raw.githubusercontent.com/lucasbritocFis/gerador-relatorio-alta/main/Modelo_RESUMO_ALTA.pdf"
+def main():
+    st.title("Processador de Relatórios de Radioterapia")
+    
+    # Upload dos arquivos
+    st.sidebar.header("Upload de Arquivos")
+    img1 = st.sidebar.file_uploader("Imagem 1 (PDF)", type=["pdf"])
+    img2 = st.sidebar.file_uploader("Imagem 2 (PDF)", type=["pdf"])
+    img3 = st.sidebar.file_uploader("Imagem 3 (PDF)", type=["pdf"])
+    img4 = st.sidebar.file_uploader("Imagem 4 (PDF)", type=["pdf"])
+    dvh = st.sidebar.file_uploader("DVH (PDF)", type=["pdf"])
+    relatorio_alta = st.sidebar.file_uploader("Relatório de Alta (PDF)", type=["pdf"])
+    modelo = st.sidebar.file_uploader("Modelo de Resumo (PDF)", type=["pdf"])
 
-# Função para baixar o modelo
-def get_modelo_pdf():
-    try:
-        response = requests.get(MODELO_URL, timeout=10)
-        response.raise_for_status()
-        modelo_path = "Modelo_RESUMO_ALTA.pdf"
-        with open(modelo_path, "wb") as f:
-            f.write(response.content)
-        
-        # Verifica se o PDF é válido
-        with open(modelo_path, "rb") as f:
-            PdfReader(f)
-        return modelo_path
-    except Exception as e:
-        st.error(f"Erro ao baixar modelo: {str(e)}")
-        raise
+    if st.sidebar.button("Processar") and all([img1, img2, img3, img4, dvh, relatorio_alta, modelo]):
+        with st.spinner("Processando..."):
+            # Criar diretório temporário
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Salvar arquivos temporariamente
+                pdf_files = []
+                for i, uploaded_file in enumerate([img1, img2, img3, img4]):
+                    file_path = os.path.join(temp_dir, f"img_{i+1}.pdf")
+                    with open(file_path, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    pdf_files.append(file_path)
+                
+                dvh_path = os.path.join(temp_dir, "dvh.pdf")
+                with open(dvh_path, "wb") as f:
+                    f.write(dvh.getbuffer())
+                
+                relatorio_path = os.path.join(temp_dir, "relatorio_alta.pdf")
+                with open(relatorio_path, "wb") as f:
+                    f.write(relatorio_alta.getbuffer())
+                
+                modelo_path = os.path.join(temp_dir, "modelo.pdf")
+                with open(modelo_path, "wb") as f:
+                    f.write(modelo.getbuffer())
+                
+                # Processamento (seu código original adaptado)
+                process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir)
+                
+                # Exibir resultado
+                st.success("Processamento concluído!")
+                with open(os.path.join(temp_dir, "resultado.pdf"), "rb") as f:
+                    st.download_button(
+                        "Baixar Relatório Final",
+                        f,
+                        file_name="resumo_alta_radioterapia.pdf",
+                        mime="application/pdf"
+                    )
 
-# Função para arredondar bordas de imagens
-def arrendondar_imagem(caminho_imagem, raio=20):
-    img = Image.open(caminho_imagem).convert("RGBA")
-    largura, altura = img.size
-    mascara = Image.new("L", (largura, altura), 0)
-    draw = ImageDraw.Draw(mascara)
-    draw.rounded_rectangle([(0, 0), (largura, altura)], radius=raio, fill=255)
-    img_com_bordas = Image.new("RGBA", (largura, altura), (0, 0, 0, 0))
-    img_com_bordas.paste(img, (0, 0), mascara)
-    img_com_bordas.save(caminho_imagem, "PNG")
-
-# Processar PDFs de entrada
-def processar_pdfs(pdf_files):
+def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
+    # Inicializar listas para armazenar as imagens e textos
     all_images = []
+    all_texts = []
     text = ""
+
+    # Processar todos os PDFs
     for pdf_file in pdf_files:
-        try:
-            doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
-            for page_num in range(len(doc)):
-                page = doc.load_page(page_num)
-                for img in page.get_images(full=True):
-                    xref = img[0]
-                    base_image = doc.extract_image(xref)
-                    img_bytes = base_image["image"]
-                    image = Image.open(io.BytesIO(img_bytes))
-                    temp_image_path = f"temp_image{len(all_images)}.png"
-                    image.save(temp_image_path, format='PNG')
-                    all_images.append(temp_image_path)
+        doc = fitz.open(pdf_file)
+        for page_num in range(len(doc)):
+            page = doc.load_page(page_num)
+            for img in page.get_images(full=True):
+                xref = img[0]
+                base_image = doc.extract_image(xref)
+                img_bytes = base_image["image"]
+                image = Image.open(io.BytesIO(img_bytes))
+                temp_image_path = os.path.join(temp_dir, f"temp_image{len(all_images)}.png")
+                image.save(temp_image_path, format='PNG')
+                all_images.append(temp_image_path)
                 text += page.get_text()
-        except Exception as e:
-            st.warning(f"Erro ao processar PDF: {str(e)}")
-    return all_images, text
+                all_texts.append(text)
 
-# Criar páginas intermediárias
-def criar_paginas_intermediarias(all_images, text, dvh_path):
-    try:
-        linhas = text.splitlines()
-        info_patient = linhas[13:38] if len(linhas) > 38 else linhas
-        
-        # Extrair informações do paciente
-        nome_paciente = "Nome não identificado"
-        id_part = "ID não identificado"
-        
-        if len(info_patient) > 3:
-            partes = info_patient[3].split(", ")
-            if len(partes) > 1:
-                sobrenome = partes[0]
-                nomes_id = partes[1].split(" (")
-                if len(nomes_id) > 1:
-                    nomes = nomes_id[0]
-                    id_part = nomes_id[1].rstrip(")") if ")" in partes[1] else "ID não identificado"
-                    nome_paciente = f"{nomes} {sobrenome}"
-                else:
-                    nome_paciente = partes[1]
-            else:
-                nome_paciente = info_patient[3]
+    linhas = text.splitlines()
+    info_patient = []
+    info_rodape = []
+    info_plano_curso = ""
 
-        output_jpgs = []
-        for idx in range(5):
-            output_pdf_path = f"output_{idx}.pdf"
-            c = canvas.Canvas(output_pdf_path, pagesize=letter)
-            
-            # Configurações de página
-            c.setFont("Helvetica", 6.5)
-            c.setLineWidth(1.5)
-            c.setStrokeColorRGB(0.82, 0.70, 0.53)
-            c.line(50, 720, 580, 720)
-            c.setFont("Helvetica-Bold", 9)
-            c.drawString(50, 710, "Informações do Plano de Tratamento")
+    imagens_dvh = convert_from_path(dvh_path, dpi=300)
+    imagemdvh = imagens_dvh[0]
+    imagemdvh.save(os.path.join(temp_dir, "anexo_dvh.png"), "PNG")
+
+    for j in linhas:
+        if j.strip().startswith("Campos no plano"):
+            info_plano_curso = j
+            break
+
+    for linha_rod in linhas[0:13]:
+        info_rodape.append(linha_rod)
+
+    for linha in linhas[13:38]:
+        info_patient.append(linha)
+
+    info_campos = []
+    for linha_campos in linhas[38:]:
+        if linha_campos == "Nome do paciente:":
+            break
+        info_campos.append(linha_campos)
+
+    texto_campos = " ".join(info_campos)
+    texto_campos = re.sub(r'\s+', ' ', texto_campos.strip())
+
+    cabecalho_campos = ["Campo", "Técnica", "Máquina", "Energia", "Escala", "ID de cunha", "Peso",
+                        "X1[cm]", "X2[cm]", "Y1[cm]", "Y2[cm]", "Gantry[deg]", "Colimador[deg]", "Mesa[deg]",
+                        "X[cm]", "Y[cm]", "Z[cm]", "SSD[cm]", "UM"]
+
+    vetores = {campo: [] for campo in cabecalho_campos}
+    valores = texto_campos.split()
+    inicio_dados = valores.index("CBCT") if "CBCT" in valores else 0
+    valores_dados = valores[inicio_dados:]
+
+    num_colunas = len(cabecalho_campos)
+    linhas_dados = []
+    linha_atual = []
+    ids_validos = ["CBCT", "MV", "KV"]
+
+    sections = {}
+    current_marker = None
+
+    for valor in valores_dados:
+        if valor in ids_validos or valor.isdigit():
+            current_marker = valor
+            sections[current_marker] = []
+        elif current_marker:
+            sections[current_marker].append(valor)
+
+    linhas_completas = []
+    for marker, lines in sections.items():
+        linha_atual = [marker]
+        for line in lines:
+            valores = line.split()
+            for valor in valores:
+                linha_atual.append(valor)
+                if len(linha_atual) == len(cabecalho_campos) + 1:
+                    linhas_completas.append(linha_atual)
+                    linha_atual = [marker]
+            if len(linha_atual) > 1:
+                linhas_completas.append(linha_atual)
+
+    partes = info_patient[3].split(", ")
+    sobrenome = partes[0]
+    nomes_id = partes[1].split(" (")
+    nomes = nomes_id[0]
+    id_part = nomes_id[1].rstrip(")")
+
+    nome_paciente = nomes + " " + sobrenome
+    id_paciente = id_part
+
+    def arrendondar_imagem(caminho_imagem, raio=20):
+        img = Image.open(caminho_imagem).convert("RGBA")
+        largura, altura = img.size
+        mascara = Image.new("L", (largura, altura), 0)
+        draw = ImageDraw.Draw(mascara)
+        draw.rounded_rectangle([(0, 0), (largura, altura)], radius=raio, fill=255)
+        img_com_bordas = Image.new("RGBA", (largura, altura), (0, 0, 0, 0))
+        img_com_bordas.paste(img, (0, 0), mascara)
+        img_com_bordas.save(caminho_imagem, "PNG")
+
+    # Criar 5 PDFs, cada um com uma imagem diferente
+    for idx in range(5):
+        output_pdf_path = os.path.join(temp_dir, f"output_{idx}.pdf")
+        c = canvas.Canvas(output_pdf_path, pagesize=letter)
+        width, height = letter
+        y_position = height - 50
+        line_height = 12
+        c.setFont("Helvetica", 6.5)
+
+        c.setLineWidth(1.5)
+        c.setStrokeColorRGB(0.82, 0.70, 0.53)
+        c.line(50, 720, 580, 720)
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(50, 710, "Informações dos " + info_plano_curso)
+        c.setFont("Helvetica", 6)
+        c.setLineWidth(1.5)
+        c.line(50, 705, 580, 705)
+        c.setStrokeColorRGB(0.0, 0.0, 0.0)
+
+        cbct = linhas_completas[0] if len(linhas_completas) > 0 else [""] * 20
+        mv = linhas_completas[19] if len(linhas_completas) > 19 else [""] * 20
+        kv = linhas_completas[38] if len(linhas_completas) > 38 else [""] * 20
+
+        campos = []
+        for i in range(57, len(linhas_completas), 19):
+            if i < len(linhas_completas):
+                campos.append(linhas_completas[i])
+
+        c.setFont("Helvetica", 6.5)
+        c.drawString(50, 770, info_patient[0])
+        c.drawString(50, 760, "Prontuário: ")
+        c.drawString(50, 750, info_patient[1])
+        c.drawString(280, 770, info_patient[6])
+        c.drawString(280, 760, info_patient[8])
+        c.drawString(280, 750, info_patient[7])
+        c.drawString(280, 740, "Orientação: ")
+        c.drawString(400, 770, "Normalização do plano: ")
+        c.drawString(400, 760, info_patient[13])
+        c.drawString(400, 750, info_patient[14])
+        c.drawString(400, 740, info_patient[15])
+        c.drawString(400, 730, info_patient[16])
+
+        c.drawString(110, 770, nomes + " " + sobrenome)
+        c.drawString(110, 760, id_part)
+        c.drawString(110, 750, info_patient[4])
+        c.drawString(317, 770, info_patient[9])
+        c.drawString(317, 760, info_patient[11])
+        c.drawString(317, 750, info_patient[10])
+        c.drawString(317, 740, info_rodape[8])
+        c.drawString(530, 770, info_patient[18])
+        c.drawString(530, 760, info_patient[19])
+        c.drawString(530, 750, info_patient[20])
+        c.drawString(530, 740, info_patient[21])
+        c.drawString(530, 730, info_patient[22])
+
+        c.setLineWidth(0.5)
+        c.line(50, 690, 580, 690)
+        c.drawString(50, 680, cbct[0])
+        c.drawString(50, 670, mv[0])
+        c.drawString(50, 660, kv[0])
+
+        c.drawString(90, 680, cbct[1])
+        c.drawString(90, 670, mv[1])
+        c.drawString(90, 660, kv[1])
+
+        c.drawString(120, 680, cbct[2])
+        c.drawString(120, 670, mv[2])
+        c.drawString(120, 660, kv[2])
+
+        c.drawString(170, 680, cbct[3])
+        c.drawString(170, 670, mv[3])
+        c.drawString(170, 660, kv[3])
+
+        c.drawString(195, 680, cbct[4])
+        c.drawString(195, 670, mv[4])
+        c.drawString(195, 660, kv[4])
+
+        c.drawString(230, 680, cbct[6])
+        c.drawString(230, 670, mv[6])
+        c.drawString(230, 660, kv[6])
+
+        c.drawString(250, 680, cbct[7])
+        c.drawString(250, 670, mv[7])
+        c.drawString(250, 660, kv[7])
+
+        c.drawString(270, 680, cbct[8])
+        c.drawString(270, 670, mv[8])
+        c.drawString(270, 660, kv[8])
+
+        c.drawString(290, 680, cbct[9])
+        c.drawString(290, 670, mv[9])
+        c.drawString(290, 660, kv[9])
+
+        c.drawString(320, 680, cbct[10])
+        c.drawString(320, 670, mv[10])
+        c.drawString(320, 660, kv[10])
+
+        c.drawString(360, 680, cbct[11])
+        c.drawString(360, 670, mv[11])
+        c.drawString(360, 660, kv[11])
+
+        c.drawString(410, 680, cbct[12])
+        c.drawString(410, 670, mv[12])
+        c.drawString(410, 660, kv[12])
+
+        c.drawString(450, 680, cbct[13])
+        c.drawString(450, 670, mv[13])
+        c.drawString(450, 660, kv[13])
+
+        c.drawString(470, 680, cbct[14])
+        c.drawString(470, 670, mv[14])
+        c.drawString(470, 660, kv[14])
+
+        c.drawString(490, 680, cbct[15])
+        c.drawString(490, 670, mv[15])
+        c.drawString(490, 660, kv[15])
+
+        c.drawString(505, 680, cbct[16])
+        c.drawString(505, 670, mv[16])
+        c.drawString(505, 660, kv[16])
+
+        c.drawString(540, 680, "Localização")
+        c.drawString(540, 670, "Localização")
+        c.drawString(540, 660, "Localização")
+
+        c.drawString(50, 695, "ID do Campo")
+        c.drawString(90, 695, "Técnica")
+        c.drawString(120, 695, "Máquina")
+        c.drawString(170, 695, "Energia")
+        c.drawString(195, 695, "Escala")
+        c.drawString(230, 695, "X1[cm]")
+        c.drawString(250, 695, "X2[cm]")
+        c.drawString(270, 695, "Y1[cm]")
+        c.drawString(290, 695, "Y2[cm]")
+        c.drawString(320, 695, "Gantry[deg]")
+        c.drawString(360, 695, "Colimador[deg]")
+        c.drawString(410, 695, "Mesa[deg]")
+        c.drawString(445, 695, "X[cm]")
+        c.drawString(465, 695, "Y[cm]")
+        c.drawString(485, 695, "Z[cm]")
+        c.drawString(505, 695, "SSD[cm]")
+        c.drawString(540, 695, "UM")
+
+        y = 0
+        for var in campos:
+            c.drawString(50, 650 - y, var[0])
+            c.drawString(90, 650 - y, var[1])
+            c.drawString(120, 650 - y, var[2])
+            c.drawString(170, 650 - y, var[3])
+            c.drawString(195, 650 - y, var[4])
+            c.drawString(230, 650 - y, var[6])
+            c.drawString(250, 650 - y, var[7])
+            c.drawString(270, 650 - y, var[8])
+            c.drawString(290, 650 - y, var[9])
+            c.drawString(320, 650 - y, var[10] + var[11] + var[12])
+            c.drawString(360, 650 - y, var[13])
+            c.drawString(410, 650 - y, var[14])
+            c.drawString(450, 650 - y, var[15])
+            c.drawString(470, 650 - y, var[16])
+            c.drawString(490, 650 - y, var[17])
+            c.drawString(505, 650 - y, var[18])
+            c.drawString(540, 650 - y, var[19])
+            y += 8
+
+        if idx < 4:
+            c.drawImage(all_images[idx], 70, 50, width=500, height=500)
             c.setFont("Helvetica", 6)
-            c.line(50, 705, 580, 705)
-            c.setStrokeColorRGB(0.0, 0.0, 0.0)
+            c.setStrokeColorRGB(0.82, 0.70, 0.53)
+            c.line(50, 570, 580, 570)
+            c.setFont("Helvetica-Bold", 9)
+            c.setFillColorRGB(0, 0, 0)
+            c.drawString(50, 560, "Representação Gráfica do Planejamento do Tratamento")
+            c.setFont("Helvetica", 6)
+            c.setStrokeColorRGB(0.82, 0.70, 0.53)
+            c.line(50, 555, 580, 555)
 
-            # Informações do paciente
-            c.drawString(50, 770, info_patient[0] if len(info_patient) > 0 else "")
-            c.drawString(50, 760, "Prontuário: ")
-            c.drawString(50, 750, info_patient[1] if len(info_patient) > 1 else "")
-            c.drawString(110, 770, nome_paciente)
-            c.drawString(110, 760, id_part)
-            c.drawString(110, 750, info_patient[4] if len(info_patient) > 4 else "")
+        if idx == 4:
+            c.drawImage(os.path.join(temp_dir, "anexo_dvh.png"), 45, 170, width=540, height=400)
+            c.setFont("Helvetica", 6)
+            c.setStrokeColorRGB(0.82, 0.70, 0.53)
+            c.line(50, 570, 580, 570)
+            c.setFont("Helvetica-Bold", 9)
+            c.setFillColorRGB(0, 0, 0)
+            c.drawString(50, 560, "Histograma Dose Volume")
+            c.setFont("Helvetica", 6)
+            c.setStrokeColorRGB(0.82, 0.70, 0.53)
+            c.line(50, 555, 580, 555)
 
-            if idx < 4 and len(all_images) > idx:
-                try:
-                    c.drawImage(all_images[idx], 70, 50, width=500, height=500)
-                except Exception as e:
-                    st.warning(f"Erro ao desenhar imagem {idx}: {str(e)}")
-                
-                # Rodapé da imagem
-                c.setFont("Helvetica", 6)
-                c.setStrokeColorRGB(0.82, 0.70, 0.53)
-                c.line(50, 570, 580, 570)
-                c.setFont("Helvetica-Bold", 9)
-                c.setFillColorRGB(0, 0, 0)
-                c.drawString(50, 560, "Representação Gráfica do Planejamento do Tratamento")
-                c.setFont("Helvetica", 6)
-                c.line(50, 555, 580, 555)
-            
-            if idx == 4:
-                try:
-                    c.drawImage(dvh_path, 45, 170, width=540, height=380)
-                except Exception as e:
-                    st.warning(f"Erro ao desenhar DVH: {str(e)}")
-                
-                # Rodapé do DVH
-                c.setFont("Helvetica", 6)
-                c.setStrokeColorRGB(0.82, 0.70, 0.53)
-                c.line(50, 570, 580, 570)
-                c.setFont("Helvetica-Bold", 9)
-                c.setFillColorRGB(0, 0, 0)
-                c.drawString(50, 560, "Histograma Dose Volume")
-                c.setFont("Helvetica", 6)
-                c.line(50, 555, 580, 555)
+        c.save()
 
-            c.save()
-            
-            # Converter para JPG
-            try:
-                images = convert_from_path(output_pdf_path, dpi=300)
-                if images:
-                    jpg_path = f"output_{idx}.jpg"
-                    images[0].save(jpg_path, "JPEG")
-                    output_jpgs.append(jpg_path)
-                    os.remove(output_pdf_path)  # Remove o PDF temporário
-            except Exception as e:
-                st.warning(f"Erro ao converter página {idx}: {str(e)}")
-
-        return output_jpgs, nome_paciente, id_part
-
-    except Exception as e:
-        st.error(f"Erro ao criar páginas: {str(e)}")
-        raise
-
-# Função principal para gerar o PDF final
-def gerar_pdf_final(pdf_img1, pdf_img2, pdf_img3, pdf_img4, pdf_relatorio, pdf_dvh):
-    # Inicializa variáveis
     output_jpgs = []
-    tmp_dvh_path = None
-    tmp_file_path = None
-    tmp_relatorio_path = None
-    modelo_path = None
+    for idx in range(5):
+        pdf_path = os.path.join(temp_dir, f"output_{idx}.pdf")
+        images = convert_from_path(pdf_path, dpi=300)
+        jpg_path = os.path.join(temp_dir, f"output_{idx}.jpg")
+        images[0].save(jpg_path, "JPEG")
+        output_jpgs.append(jpg_path)
 
-    try:
-        # 1. Baixar modelo
-        modelo_path = get_modelo_pdf()
-        
-        # 2. Processar PDFs de entrada
-        pdf_files = [pdf_img1, pdf_img2, pdf_img3, pdf_img4]
-        all_images, text = processar_pdfs(pdf_files)
-        if not all_images:
-            raise ValueError("Nenhuma imagem extraída dos PDFs")
+    # Carregar o PDF modelo
+    pdf_modelo = PdfReader(modelo_path)
+    output = PdfWriter()
 
-        # 3. Processar DVH
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_dvh:
-            tmp_dvh.write(pdf_dvh.read())
-            tmp_dvh_path = tmp_dvh.name
+    # Página 1: Capa com Nome + ID
+    pagina1 = pdf_modelo.pages[0]
+    packet = io.BytesIO()
+    can = canvas.Canvas(packet, pagesize=letter)
+    can.setStrokeColorRGB(0.82, 0.70, 0.53)
+    can.setFillColorRGB(0.82, 0.70, 0.53)
+    can.setFont("Helvetica-Bold", 15)
+    can.drawString(25, 630, nomes + " " + sobrenome)
+    can.drawString(25, 600, "ID: " + id_part)
+    can.save()
+    packet.seek(0)
+    novo_pdf = PdfReader(packet)
+    pagina1.merge_page(novo_pdf.pages[0])
+    output.add_page(pagina1)
 
-        dvh_images = convert_from_path(tmp_dvh_path, dpi=300)
-        if not dvh_images:
-            raise ValueError("Falha ao converter DVH")
-        
-        dvh_images[0].save("anexo_dvh.png", "PNG")
-
-        # 4. Criar páginas intermediárias
-        output_jpgs, nome_paciente, id_paciente = criar_paginas_intermediarias(all_images, text, "anexo_dvh.png")
-        if not output_jpgs:
-            raise ValueError("Páginas intermediárias não geradas")
-
-        # 5. Carregar modelo PDF
-        try:
-            pdf_modelo = PdfReader(modelo_path)
-        except Exception:
-            import pikepdf
-            pdf_modelo = pikepdf.Pdf.open(modelo_path)
-
-        output = PdfWriter()
-
-        # Página 1: Capa
-        pagina1 = pdf_modelo.pages[0]
-        packet = io.BytesIO()
-        can = canvas.Canvas(packet, pagesize=letter)
-        can.setStrokeColorRGB(0.82, 0.70, 0.53)
-        can.setFillColorRGB(0.82, 0.70, 0.53)
-        can.setFont("Helvetica-Bold", 15)
-        can.drawString(25, 630, nome_paciente)
-        can.drawString(25, 600, "ID: " + id_paciente)
-        can.save()
-        packet.seek(0)
-        novo_pdf = PdfReader(packet)
-        pagina1.merge_page(novo_pdf.pages[0])
-        output.add_page(pagina1)
-
-        # Página 2: Relatório
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_relatorio:
-            tmp_relatorio.write(pdf_relatorio.read())
-            tmp_relatorio_path = tmp_relatorio.name
-
-        relatorio_images = convert_from_path(tmp_relatorio_path, dpi=300)
-        if relatorio_images:
-            img_cortada = cortar_ate_texto(relatorio_images[0])
-            img_cortada.save("anexo_temp.jpg", "JPEG")
-
-        packet = io.BytesIO()
-        can = canvas.Canvas(packet, pagesize=letter)
-        can.drawImage("anexo_temp.jpg", 40, 120, width=450, height=450)
-        can.save()
-        packet.seek(0)
-        novo_pdf = PdfReader(packet)
-        pagina2 = pdf_modelo.pages[1]
-        pagina2.merge_page(novo_pdf.pages[0])
-        output.add_page(pagina2)
-
-        # Páginas 3-7: Imagens
-        for i in range(2, 7):
-            if (i-2) < len(output_jpgs):
-                pagina = pdf_modelo.pages[i]
-                packet = io.BytesIO()
-                can = canvas.Canvas(packet, pagesize=letter)
-                can.setFillColorRGB(0.82, 0.70, 0.53)
-                can.setFont("Helvetica-Bold", 15)
-                can.drawString(60, 730, nome_paciente)
-                
-                arrendondar_imagem(output_jpgs[i-2], raio=60)
-                can.drawImage(output_jpgs[i-2], 55, 40, width=420, height=530, mask="auto")
-                can.setFont("Helvetica", 5)
-                can.save()
-                packet.seek(0)
-                novo_pdf = PdfReader(packet)
-                pagina.merge_page(novo_pdf.pages[0])
-                output.add_page(pagina)
-
-        # Página 8: Final
-        output.add_page(pdf_modelo.pages[7])
-
-        # Salvar PDF final
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-            output.write(tmp_file)
-            tmp_file_path = tmp_file.name
-
-        # Verificar se o PDF foi criado
-        if not os.path.exists(tmp_file_path) or os.path.getsize(tmp_file_path) == 0:
-            raise ValueError("PDF final não foi gerado corretamente")
-
-        return tmp_file_path
-
-    except Exception as e:
-        st.error(f"Erro ao gerar PDF: {str(e)}")
-        return None
-
-    finally:
-        # Limpeza de arquivos temporários
-        temp_files = [
-            tmp_dvh_path,
-            "anexo_dvh.png",
-            "anexo_temp.jpg",
-            tmp_relatorio_path,
-            *output_jpgs
-        ]
-        
-        for file in temp_files:
-            try:
-                if file and os.path.exists(file):
-                    os.remove(file)
-            except Exception as e:
-                st.warning(f"Não foi possível remover {file}")
-
-        if modelo_path and os.path.exists(modelo_path):
-            try:
-                os.remove(modelo_path)
-            except Exception:
-                pass
-
-# Função para cortar imagem
-def cortar_ate_texto(imagem):
-    try:
+    # Função para cortar imagem até o texto
+    def cortar_ate_texto(imagem):
         dpi = 300
         cm_para_cortar = 3
-        pixels_para_cortar = int((cm_para_cortar / 2.54) * dpi)
+        polegadas_para_cortar = cm_para_cortar / 2.54
+        pixels_para_cortar = int(polegadas_para_cortar * dpi)
         largura, altura = imagem.size
-        img_cortada = imagem.crop((0, pixels_para_cortar, largura, altura))
-        return img_cortada
-    except Exception as e:
-        st.warning(f"Erro ao cortar imagem: {str(e)}")
-        return imagem
+        img_cortada_inicial = imagem.crop((0, pixels_para_cortar, largura, altura))
+        img_array = np.array(img_cortada_inicial.convert("L"))
+        nova_altura, nova_largura = img_array.shape
+        limiar_branco = 245
+        ultima_linha = 0
+        for y in range(nova_altura):
+            if np.mean(img_array[y, :]) < limiar_branco:
+                ultima_linha = y
+        margem = 20
+        bottom = min(ultima_linha + margem, nova_altura)
+        img_cortada_final = img_cortada_inicial.crop((0, 0, nova_largura, bottom))
+        return img_cortada_final
 
-import streamlit as st
-import time
+    # Página 2: Relatório de alta
+    imagens = convert_from_path(relatorio_path, dpi=300)
+    imagem = imagens[0]
+    img_cortada = cortar_ate_texto(imagem)
+    img_cortada.save(os.path.join(temp_dir, "anexo_temp.jpg"), "JPEG")
 
-# Configuração da página
-st.set_page_config(page_title="Gerador de Relatórios", layout="wide")
+    packet = io.BytesIO()
+    can = canvas.Canvas(packet, pagesize=letter)
+    can.drawImage(os.path.join(temp_dir, "anexo_temp.jpg"), 50, 140, width=450, height=490)
+    can.setStrokeColorRGB(0.82, 0.70, 0.53)
+    can.setFillColorRGB(0.82, 0.70, 0.53)
+    can.setFont("Helvetica-Bold", 15)
+    can.drawString(60, 730, nomes + " " + sobrenome)
+    can.save()
+    packet.seek(0)
+    novo_pdf = PdfReader(packet)
+    pagina2 = pdf_modelo.pages[1]
+    pagina2.merge_page(novo_pdf.pages[0])
+    output.add_page(pagina2)
 
-# CSS para personalizar os uploads
-st.markdown("""
-    <style>
-        /* Esconde o uploader padrão */
-        div[data-testid="stFileUploader"] {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-        
-        /* Estilização das áreas de upload */
-        .upload-box {
-            border: 3px dashed #4e8cff;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            background: #f8faff;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 16px;
-            color: #4e8cff;
-            font-weight: bold;
-        }
-        .upload-box:hover {
-            background: #e6f0ff;
-            transform: scale(1.02);
-        }
-        .upload-icon {
-            font-size: 50px;
-            margin-bottom: 10px;
-            color: #4e8cff;
-        }
-        .uploaded-file {
-            color: green;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        .custom-title {
-            font-size: 22px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-    </style>
-""", unsafe_allow_html=True)
+    # Páginas 3 a 7: Imagens geradas
+    for i in range(2, 7):
+        pagina = pdf_modelo.pages[i]
+        packet = io.BytesIO()
+        can = canvas.Canvas(packet, pagesize=letter)
+        can.setFillColorRGB(0.82, 0.70, 0.53)
+        can.setFont("Helvetica-Bold", 15)
+        can.drawString(60, 730, nomes + " " + sobrenome)
+        img_idx = i - 2
+        arrendondar_imagem(output_jpgs[img_idx], raio=60)
+        can.drawImage(output_jpgs[img_idx], 55, 40, width=420, height=530, mask="auto")
+        can.setFont("Helvetica", 5)
+        can.save()
+        packet.seek(0)
+        novo_pdf = PdfReader(packet)
+        pagina.merge_page(novo_pdf.pages[0])
+        output.add_page(pagina)
 
-# Título
-st.markdown("---")
-st.title("📄 Gerador de Relatórios de Alta")
+    # Página 8: Intacta
+    output.add_page(pdf_modelo.pages[7])
 
-# Criar duas colunas
-col1, col2 = st.columns([2, 1])
+    # Salvar o PDF final
+    with open(os.path.join(temp_dir, "resultado.pdf"), "wb") as f:
+        output.write(f)
 
-# 📌 **Coluna 1: Uploads das Imagens e DVH**
-with col1:
-    st.markdown('<p class="custom-title">📂 Upload das Imagens de Tratamento</p>', unsafe_allow_html=True)
-
-    # Linha com Imagem 1 e Imagem 2
-    row1_col1, row1_col2 = st.columns(2)
-    with row1_col1:
-        img1 = st.file_uploader("", type="pdf", key="img1")
-        st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'img1\').click()">'
-                    f'<div class="upload-icon">📄</div>Imagem 1</div>', unsafe_allow_html=True)
-        if img1:
-            st.markdown(f'<div class="uploaded-file">✅ {img1.name}</div>', unsafe_allow_html=True)
-
-    with row1_col2:
-        img2 = st.file_uploader("", type="pdf", key="img2")
-        st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'img2\').click()">'
-                    f'<div class="upload-icon">📄</div>Imagem 2</div>', unsafe_allow_html=True)
-        if img2:
-            st.markdown(f'<div class="uploaded-file">✅ {img2.name}</div>', unsafe_allow_html=True)
-
-    # Linha com Imagem 3 e Imagem 4
-    row2_col1, row2_col2 = st.columns(2)
-    with row2_col1:
-        img3 = st.file_uploader("", type="pdf", key="img3")
-        st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'img3\').click()">'
-                    f'<div class="upload-icon">📄</div>Imagem 3</div>', unsafe_allow_html=True)
-        if img3:
-            st.markdown(f'<div class="uploaded-file">✅ {img3.name}</div>', unsafe_allow_html=True)
-
-    with row2_col2:
-        img4 = st.file_uploader("", type="pdf", key="img4")
-        st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'img4\').click()">'
-                    f'<div class="upload-icon">📄</div>Imagem 4</div>', unsafe_allow_html=True)
-        if img4:
-            st.markdown(f'<div class="uploaded-file">✅ {img4.name}</div>', unsafe_allow_html=True)
-
-    # DVH sozinho abaixo das imagens
-    st.markdown('<p class="custom-title">📊 Upload do DVH</p>', unsafe_allow_html=True)
-    dvh = st.file_uploader("", type="pdf", key="dvh")
-    st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'dvh\').click()">'
-                f'<div class="upload-icon">📉</div>Arquivo DVH</div>', unsafe_allow_html=True)
-    if dvh:
-        st.markdown(f'<div class="uploaded-file">✅ {dvh.name}</div>', unsafe_allow_html=True)
-
-# 📌 **Coluna 2 (mais longa): Upload do Relatório e Botão**
-with col2:
-    st.markdown('<p class="custom-title">📜 Upload do Relatório de Alta</p>', unsafe_allow_html=True)
-    relatorio = st.file_uploader("", type="pdf", key="relatorio")
-    st.markdown(f'<div class="upload-box" onclick="document.getElementById(\'relatorio\').click()">'
-                f'<div class="upload-icon">📑</div>Relatório de Alta</div>', unsafe_allow_html=True)
-    if relatorio:
-        st.markdown(f'<div class="uploaded-file">✅ {relatorio.name}</div>', unsafe_allow_html=True)
-
-    st.markdown("<br><br>", unsafe_allow_html=True)  # Espaçamento extra
-
-    # Botão para gerar relatório
-    if st.button("🚀 Gerar Relatório", type="primary"):
-        with st.spinner("Processando... Aguarde."):
-            time.sleep(2)  # Simula o processamento
-            st.success("✅ Relatório gerado com sucesso!")
-            st.balloons()
-
-
-
+if __name__ == "__main__":
+    main()
 
