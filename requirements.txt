@@ -6,3 +6,11 @@ pdf2image
 PyPDF2
 numpy
 pyngrok
+streamlit
+pdfplumber
+PyMuPDF
+Pillow
+PyPDF2
+reportlab
+pdf2image
+googletrans==4.0.0rc1
