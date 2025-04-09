@@ -185,11 +185,11 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
                 linhas_completas.append(linha_atual)
 
 
-    #partes = info_patient[3].split(", ")
-    #sobrenome = partes[0]
-    #nomes_id = partes[1].split(" (")
-    #nomes = nomes_id[0]
-    #id_part = nomes_id[1].rstrip(")")
+    partes = linhas[3].split(", ")
+    sobrenome = partes[0]
+    nomes_id = partes[1].split(" (")
+    nomes = nomes_id[0]
+    id_part = nomes_id[1].rstrip(")")
     
     #nome_paciente = nomes + " " + sobrenome
     #id_paciente = id_part
@@ -234,17 +234,17 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
 
         c.setFont("Helvetica", 6.5)
         c.drawString(50, 770, linhas[0])
-        #c.drawString(50, 760, "Prontuário: ")
-        c.drawString(50, 750, info_patient[1])
-        #c.drawString(280, 770, info_patient[6])
-        #c.drawString(280, 760, info_patient[8])
-        #c.drawString(280, 750, info_patient[7])
-        #c.drawString(280, 740, "Orientação: ")
-        #c.drawString(400, 770, "Normalização do plano: ")
-        #c.drawString(400, 760, info_patient[13])
-        #c.drawString(400, 750, info_patient[14])
-        #c.drawString(400, 740, info_patient[15])
-        #c.drawString(400, 730, info_patient[16])
+        c.drawString(50, 760, "Prontuário: ")
+        c.drawString(50, 750, linhas[14])
+        c.drawString(280, 770, linhas[19])
+        c.drawString(280, 760, linhas[21])
+        c.drawString(280, 750, linhas[20])
+        c.drawString(280, 740, "Orientação: ")
+        c.drawString(400, 770, "Normalização do plano: ")
+        c.drawString(400, 760, linhas[26])
+        c.drawString(400, 750, linhas[27])
+        c.drawString(400, 740, linhas[28])
+        c.drawString(400, 730, linhas[29])
 
         #c.drawString(110, 770, nomes + " " + sobrenome)
         #c.drawString(110, 760, id_part)
