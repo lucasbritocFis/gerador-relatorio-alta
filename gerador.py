@@ -90,6 +90,10 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
                 all_texts.append(text)
 
     linhas = text.splitlines()
+    st.write("LINHAS EXTRAÍDAS:")
+        for i, linha in enumerate(linhas):
+        st.write(f"{i}: {linha}")
+            
     info_patient = []
     info_rodape = []
     info_plano_curso = ""
