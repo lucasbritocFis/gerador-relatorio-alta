@@ -156,11 +156,11 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
                 linhas_completas.append(linha_atual)
 
 
-    partes = info_patient[3].split(", ")
-    sobrenome = partes[0]
-    nomes_id = partes[1].split(" (")
-    nomes = nomes_id[0]
-    id_part = nomes_id[1].rstrip(")")
+    #partes = info_patient[3].split(", ")
+    #sobrenome = partes[0]
+    #nomes_id = partes[1].split(" (")
+    #nomes = nomes_id[0]
+    #id_part = nomes_id[1].rstrip(")")
     
     nome_paciente = nomes + " " + sobrenome
     id_paciente = id_part
