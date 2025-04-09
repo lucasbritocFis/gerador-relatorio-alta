@@ -91,7 +91,7 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
 
     linhas = text.splitlines()
     st.write("LINHAS EXTRAÍDAS:")
-        for i, linha in enumerate(linhas):
+    for i, linha in enumerate(linhas):
         st.write(f"{i}: {linha}")
             
     info_patient = []
