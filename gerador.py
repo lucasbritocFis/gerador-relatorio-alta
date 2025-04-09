@@ -162,8 +162,8 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
     #nomes = nomes_id[0]
     #id_part = nomes_id[1].rstrip(")")
     
-    nome_paciente = nomes + " " + sobrenome
-    id_paciente = id_part
+    #nome_paciente = nomes + " " + sobrenome
+    #id_paciente = id_part
 
     def arrendondar_imagem(caminho_imagem, raio=20):
         img = Image.open(caminho_imagem).convert("RGBA")
