@@ -439,7 +439,7 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
         can = canvas.Canvas(packet, pagesize=letter)
         can.setFillColorRGB(0.82, 0.70, 0.53)
         can.setFont("Helvetica-Bold", 15)
-        can.drawString(60, 730, nomes + " " + sobrenome)
+        #can.drawString(60, 730, nomes + " " + sobrenome)
         img_idx = i - 2
         arrendondar_imagem(output_jpgs[img_idx], raio=60)
         can.drawImage(output_jpgs[img_idx], 55, 40, width=420, height=530, mask="auto")
