@@ -344,7 +344,7 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
         c.drawString(445, 695, "X[cm]")
         c.drawString(465, 695, "Y[cm]")
         c.drawString(485, 695, "Z[cm]")
-        c.drawString(515, 695, "SSD[cm]")
+        c.drawString(510, 695, "SSD[cm]")
         c.drawString(540, 695, "UM")
 
         y = 0
@@ -364,7 +364,7 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
             c.drawString(450, 650 - y, var[15])
             c.drawString(470, 650 - y, var[16])
             c.drawString(490, 650 - y, var[17])
-            c.drawString(515, 650 - y, var[18])
+            c.drawString(510, 650 - y, var[18])
             c.drawString(540, 650 - y, var[19])
             y += 8
 
