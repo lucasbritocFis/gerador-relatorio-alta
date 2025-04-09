@@ -156,31 +156,13 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
                 linhas_completas.append(linha_atual)
 
 
-    # Por esta versão mais segura:
-    try:
-        partes = info_patient[3].split(", ")
-        if len(partes) >= 2:
-            sobrenome = partes[0]
-            # Tratamento mais robusto para extrair nome e ID
-            nome_id_str = partes[1]
-            if "(" in nome_id_str and ")" in nome_id_str:
-                nomes = nome_id_str.split(" (")[0]
-                id_part = nome_id_str.split("(")[1].rstrip(")")
-            else:
-                nomes = nome_id_str
-                id_part = "ID não encontrado"
-        else:
-            sobrenome = info_patient[3]
-            nomes = "Nome não encontrado"
-            id_part = "ID não encontrado"
-    except Exception as e:
-        st.error(f"Erro ao processar informações do paciente: {str(e)}")
-        sobrenome = "Erro"
-        nomes = "Erro"
-        id_part = "Erro"
-
-    nome_paciente = f"{nomes} {sobrenome}".strip()
-
+    partes = info_patient[3].split(", ")
+    sobrenome = partes[0]
+    nomes_id = partes[1].split(" (")
+    nomes = nomes_id[0]
+    id_part = nomes_id[1].rstrip(")")
+    
+    nome_paciente = nomes + " " + sobrenome
     id_paciente = id_part
 
     def arrendondar_imagem(caminho_imagem, raio=20):
