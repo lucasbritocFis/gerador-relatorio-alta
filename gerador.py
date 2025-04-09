@@ -235,7 +235,7 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
         c.setFont("Helvetica", 6.5)
         c.drawString(50, 770, linhas[0])
         c.drawString(50, 760, "Prontuário: ")
-        c.drawString(50, 750, linhas[14])
+        c.drawString(50, 750, linhas[13])
         c.drawString(280, 770, linhas[19])
         c.drawString(280, 760, linhas[21])
         c.drawString(280, 750, linhas[20])
@@ -365,7 +365,7 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
             c.drawString(470, 650 - y, var[16])
             c.drawString(490, 650 - y, var[17])
             c.drawString(505, 650 - y, var[18])
-            c.drawString(540, 650 - y, var[19])
+            c.drawString(550, 650 - y, var[19])
             y += 8
 
         if idx < 4:
