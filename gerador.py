@@ -204,8 +204,8 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
                 campos.append(linhas_completas[i])
 
         c.setFont("Helvetica", 6.5)
-        c.drawString(50, 770, linhas)
-        c.drawString(50, 760, "Prontuário: ")
+        #c.drawString(50, 770, linhas)
+        #c.drawString(50, 760, "Prontuário: ")
         #c.drawString(50, 750, info_patient[1])
         #c.drawString(280, 770, info_patient[6])
         #c.drawString(280, 760, info_patient[8])
