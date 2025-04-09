@@ -103,12 +103,37 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
             info_plano_curso = j
             break
 
-    for linha_rod in linhas[0:13]:
-        info_rodape.append(linha_rod)
+    #for linha_rod in linhas[0:13]:
+    #    info_rodape.append(linha_rod)
 
-    for linha in linhas[13:38]:
-        info_patient.append(linha)
+   # for linha in linhas[13:38]:
+    #    info_patient.append(linha)
 
+    info_patient = []
+    info_rodape = []
+    
+    # Captura o rodapé até encontrar "Nome do paciente"
+    pegando_rodape = True
+    for linha in linhas:
+        if "Nome do paciente" in linha:
+            pegando_rodape = False
+        if pegando_rodape:
+            info_rodape.append(linha)
+        else:
+            break
+    
+    # Captura info do paciente entre "Nome do paciente" e "Campos no plano"
+    pegando_paciente = False
+    for linha in linhas:
+        if "Nome do paciente" in linha:
+            pegando_paciente = True
+            info_patient.append(linha)
+        elif pegando_paciente:
+            if "Campos no plano" in linha:
+                break
+            info_patient.append(linha)
+
+    
     info_campos = []
     for linha_campos in linhas[38:]:
         if linha_campos == "Nome do paciente:":
@@ -206,7 +231,7 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
         c.setFont("Helvetica", 6.5)
         #c.drawString(50, 770, linhas)
         #c.drawString(50, 760, "Prontuário: ")
-        #c.drawString(50, 750, info_patient[1])
+        c.drawString(50, 750, info_patient[1])
         #c.drawString(280, 770, info_patient[6])
         #c.drawString(280, 760, info_patient[8])
         #c.drawString(280, 750, info_patient[7])
