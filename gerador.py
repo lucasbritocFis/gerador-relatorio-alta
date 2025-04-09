@@ -90,9 +90,9 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
                 all_texts.append(text)
 
     linhas = text.splitlines()
-    st.write("LINHAS EXTRAÍDAS:")
-    for i, linha in enumerate(linhas):
-        st.write(f"{i}: {linha}")
+    #st.write("LINHAS EXTRAÍDAS:")
+    #for i, linha in enumerate(linhas):
+        #st.write(f"{i}: {linha}")
             
     info_patient = []
     info_rodape = []
@@ -246,18 +246,18 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
         c.drawString(400, 740, linhas[28])
         c.drawString(400, 730, linhas[29])
 
-        #c.drawString(110, 770, nomes + " " + sobrenome)
-        #c.drawString(110, 760, id_part)
-        #c.drawString(110, 750, info_patient[4])
-        #c.drawString(317, 770, info_patient[9])
-        #c.drawString(317, 760, info_patient[11])
-        #c.drawString(317, 750, info_patient[10])
-        #c.drawString(317, 740, info_rodape[8])
-        #c.drawString(530, 770, info_patient[18])
-        #c.drawString(530, 760, info_patient[19])
-        #c.drawString(530, 750, info_patient[20])
-        #c.drawString(530, 740, info_patient[21])
-        #c.drawString(530, 730, info_patient[22])
+        c.drawString(110, 770, nomes + " " + sobrenome)
+        c.drawString(110, 760, id_part)
+        c.drawString(110, 750, linhas[16])
+        c.drawString(317, 770, linhas[21])
+        c.drawString(317, 760, linhas[23])
+        c.drawString(317, 750, linhas[22])
+        c.drawString(317, 740, linhas[7])
+        c.drawString(530, 770, linhas[30])
+        c.drawString(530, 760, linhas[31])
+        c.drawString(530, 750, linhas[32])
+        c.drawString(530, 740, linhas[33])
+        c.drawString(530, 730, linhas[35])
 
         c.setLineWidth(0.5)
         c.line(50, 690, 580, 690)
@@ -413,8 +413,8 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
     can.setStrokeColorRGB(0.82, 0.70, 0.53)
     can.setFillColorRGB(0.82, 0.70, 0.53)
     can.setFont("Helvetica-Bold", 15)
-    #can.drawString(25, 630, nomes + " " + sobrenome)
-    #can.drawString(25, 600, "ID: " + id_part)
+    can.drawString(25, 630, nomes + " " + sobrenome)
+    can.drawString(25, 600, "ID: " + id_part)
     can.save()
     packet.seek(0)
     novo_pdf = PdfReader(packet)
@@ -453,7 +453,7 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
     can.setStrokeColorRGB(0.82, 0.70, 0.53)
     can.setFillColorRGB(0.82, 0.70, 0.53)
     can.setFont("Helvetica-Bold", 15)
-    #can.drawString(60, 730, nomes + " " + sobrenome)
+    can.drawString(60, 730, nomes + " " + sobrenome)
     can.save()
     packet.seek(0)
     novo_pdf = PdfReader(packet)
