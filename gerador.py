@@ -321,9 +321,9 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
         c.drawString(490, 670, mv[15])
         c.drawString(490, 660, kv[15])
 
-        c.drawString(515, 680, cbct[16])
-        c.drawString(515, 670, mv[16])
-        c.drawString(515, 660, kv[16])
+        c.drawString(510, 680, cbct[16])
+        c.drawString(510, 670, mv[16])
+        c.drawString(510, 660, kv[16])
 
         c.drawString(540, 680, "Localização")
         c.drawString(540, 670, "Localização")
