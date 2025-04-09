@@ -91,8 +91,8 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
 
     linhas = text.splitlines()
     st.write("LINHAS EXTRAÍDAS:")
-    for i, linha in enumerate(linhas):
-        st.write(f"{i}: {linha}")
+    #for i, linha in enumerate(linhas):
+    #    st.write(f"{i}: {linha}")
             
     info_patient = []
     info_rodape = []
@@ -321,9 +321,9 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
         c.drawString(490, 670, mv[15])
         c.drawString(490, 660, kv[15])
 
-        c.drawString(505, 680, cbct[16])
-        c.drawString(505, 670, mv[16])
-        c.drawString(505, 660, kv[16])
+        c.drawString(515, 680, cbct[16])
+        c.drawString(515, 670, mv[16])
+        c.drawString(515, 660, kv[16])
 
         c.drawString(540, 680, "Localização")
         c.drawString(540, 670, "Localização")
@@ -344,7 +344,7 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
         c.drawString(445, 695, "X[cm]")
         c.drawString(465, 695, "Y[cm]")
         c.drawString(485, 695, "Z[cm]")
-        c.drawString(505, 695, "SSD[cm]")
+        c.drawString(515, 695, "SSD[cm]")
         c.drawString(540, 695, "UM")
 
         y = 0
@@ -364,8 +364,8 @@ def process_files(pdf_files, dvh_path, relatorio_path, modelo_path, temp_dir):
             c.drawString(450, 650 - y, var[15])
             c.drawString(470, 650 - y, var[16])
             c.drawString(490, 650 - y, var[17])
-            c.drawString(505, 650 - y, var[18])
-            c.drawString(550, 650 - y, var[19])
+            c.drawString(515, 650 - y, var[18])
+            c.drawString(540, 650 - y, var[19])
             y += 8
 
         if idx < 4:
