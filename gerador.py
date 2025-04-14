@@ -18,14 +18,14 @@ import numpy as np
 import tempfile
 
 def main():
-    st.title("Processador de Relatórios de Radioterapia")
+    st.title("Processador de Relatórios de Alta")
     
     # Upload dos arquivos
     st.sidebar.header("Upload de Arquivos")
-    img1 = st.sidebar.file_uploader("Imagem 1 (PDF)", type=["pdf"])
-    img2 = st.sidebar.file_uploader("Imagem 2 (PDF)", type=["pdf"])
-    img3 = st.sidebar.file_uploader("Imagem 3 (PDF)", type=["pdf"])
-    img4 = st.sidebar.file_uploader("Imagem 4 (PDF)", type=["pdf"])
+    img1 = st.sidebar.file_uploader("Axial (PDF)", type=["pdf"])
+    img2 = st.sidebar.file_uploader("Sagital (PDF)", type=["pdf"])
+    img3 = st.sidebar.file_uploader("Coronal (PDF)", type=["pdf"])
+    img4 = st.sidebar.file_uploader("3D (PDF)", type=["pdf"])
     dvh = st.sidebar.file_uploader("DVH (PDF)", type=["pdf"])
     relatorio_alta = st.sidebar.file_uploader("Relatório de Alta (PDF)", type=["pdf"])
     modelo = st.sidebar.file_uploader("Modelo de Resumo (PDF)", type=["pdf"])
