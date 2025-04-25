@@ -1,1 +1,2 @@
+msodbcsql17
 poppler-utils
